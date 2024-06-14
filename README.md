@@ -27,10 +27,12 @@ The audience for this document includes:
 This project uses several methods and products to optimize your workflow.
 - Use a version control system (**GitHub**) to track your changes and collaborate with others.
 - Use a cloud LLM (**ChatGPT**) to facilitate shaping and writing playbook and runbooks.
+- Use a diagram as code tool (**Mermaid**) to draw any system design or diagram.
 - Use a Python LLM-enabled CLI (**Aider.chat**) to facilitate coding.
 - Use a build tool (**Makefile**) to automate your build tasks.
 - Use a package manager (**pipenv**) to manage your dependencies.
 - Use a testing framework (**pytest**) to automate your testing.
+- Use a linter (**check-jsonschema**) to lint the rules YAML file.
 - Use a containerization platform (**Docker**) to run your application in any environment.
 
 ---

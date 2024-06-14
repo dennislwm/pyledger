@@ -19,3 +19,68 @@ Can you modify the python script to use the typer library for any parameters use
 ---
 ## Create unit tests
 Now create a test_main.py file that tests the main application using pytest
+
+---
+This is a modified rules file that applies to income and expenses separately.
+A. If the amount is positive, then rules below income will be used, however, if the amount is negative, rules under expense will be used instead.
+B. The transaction type allows for wildcards, such as *, ?.
+C. Update the code for changes, and also the test cases.
+
+rules:
+  - income:
+    - transaction_type: "Maturity of Fixed Deposit"
+      debit_account: "Assets:AU:Savings:HSBC"
+      credit_account: "Assets:AU:Term:HSBC:Aug23"
+    - transaction_type: "*"
+      debit_account: "Assets:AU:Savings:HSBC"
+      credit_account: "Income:AU:Interest"
+  - expense:
+    - transaction_type: "*"
+      debit_account: "Expenses:AU"
+      credit_account: "Assets:AU:Savings:HSBC"
+
+---
+I've modifed the rules.yaml file to have an input.csv.header that applies to css files only.
+a. The column header names should use the input.csv.header if it exists, otherwise just use the default header names of "Date", "Description", and "Amount".
+b. Use a default variable in the code that stores the default header names as a dictionary. This default variable will be compared to the input object, and any specified input will override the default variable dictionary.
+
+input:
+  csv:
+    header:
+      - date: "Transaction Date"
+      - description: "Description"
+      - amount: "Amount"
+
+---
+I got this error how do I resolve it?
+
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/Users/dennislwm/fx-git-pull/13pyledger/app/ledger.py", line 43, in transform_transactions
+    amount = float(row[headers['amount']])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: could not convert string to float: '1,925.03'
+
+---
+The output date is printed as '01 May 2024' but I want it to be in this format '2024/05/01'.
+
+---
+I've modified the rules object to include an optional description key:
+a. If the description key is specified, then the output description should use the value given in the rules, otherwise use the description from the input file.
+
+rules:
+  - income:
+    - transaction_type: "Maturity of Fixed Deposit"
+      description: "Maturity of Fixed Deposit"
+      debit_account: "Assets:AU:Savings:HSBC"
+      credit_account: "Assets:AU:Term:HSBC:Aug23"
+
+---
+The match_rule function should be case insensitive
+
+---
+For the input, I want to sort the transformation_df by date in ascending order, before calling the function transform_transactions.
+
+transactions_df = transactions_df.sort_values(by=headers['parsed_date'])
+
+The above line is giving the error KeyError: parsed_date
