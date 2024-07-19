@@ -1,4 +1,7 @@
 # Custom
+.aider*
+.DS_Store
+input/
 rules/
 
 # Byte-compiled / optimized / DLL files

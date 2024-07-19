@@ -84,3 +84,16 @@ For the input, I want to sort the transformation_df by date in ascending order, 
 transactions_df = transactions_df.sort_values(by=headers['parsed_date'])
 
 The above line is giving the error KeyError: parsed_date
+
+---
+I want to refactor the code to use object-oriented concepts:
+(1) A Parent class BaseProcessor that has the following interface using ABC:
+- rules: dict
+- headers: dict
+- load_rules() -> self.rules
+- load_input_file() -> dataframe
+- get_header() -> self.header
+2) Child classes XlsProcessor for XLS files and CsvProcessor for CSV files that inherit and implement the parent class BaseProcessor.
+3) A parent class that has the following interface methods, and a child class that implements:
+- validate_header() -> boolean
+- transform() -> list(string)
