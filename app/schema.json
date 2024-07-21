@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
+  "required": [ "rules" ],
   "additionalProperties": false,
   "properties": {
     "input": {
@@ -77,7 +78,8 @@
       "additionalProperties": false,
       "properties": {
         "first_row": {
-          "type": "number"
+          "type": "number",
+          "minimum": 1
         }
       }
     },
