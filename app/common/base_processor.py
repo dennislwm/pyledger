@@ -7,8 +7,8 @@ DEFAULT_HEADERS= {
   "date": "Date",
   "description": "Description",
   "income": "Deposit",
-  "expense": "Withdrawal",
-  "amount": "Amount"
+  "withdraw": "Withdrawal",
+  "deposit": "Amount"
 }
 
 class BaseProcessor(ABC):
@@ -40,15 +40,15 @@ class BaseProcessor(ABC):
   def normalize_transactions(self, transactions_df: any, headers: dict) -> any:
     # Normalize amount, income and expense.
     if headers['amount'] in transactions_df.columns:
-      transactions_df[headers['expense']] = transactions_df[headers['amount']].apply(lambda x: x if (float(x.replace(',', ''))<0) else 0)
-      transactions_df[headers['income']] = transactions_df[headers['amount']].apply(lambda x: x if (float(x.replace(',', ''))>0) else 0)
+      transactions_df[headers['withdraw']] = transactions_df[headers['amount']].apply(lambda x: x if (float(x.replace(',', ''))<0) else 0)
+      transactions_df[headers['deposit']] = transactions_df[headers['amount']].apply(lambda x: x if (float(x.replace(',', ''))>0) else 0)
     else:
-      transactions_df[headers['amount']] = transactions_df[headers['income']] + transactions_df[headers['expense']]
+      transactions_df[headers['amount']] = transactions_df[headers['deposit']] + transactions_df[headers['withdraw']]
     return transactions_df
 
   def transform_transactions(self, transactions_df: any, rules: dict, headers: dict):
-    income_rules = rules['rules'][0]['income']
-    expense_rules = rules['rules'][1]['expense']
+    income_rules = rules['rules']['income']
+    expense_rules = rules['rules']['expense']
 
     output = []
     for _, row in transactions_df.iterrows():

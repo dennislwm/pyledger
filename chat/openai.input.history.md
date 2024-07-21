@@ -97,3 +97,6 @@ I want to refactor the code to use object-oriented concepts:
 3) A parent class that has the following interface methods, and a child class that implements:
 - validate_header() -> boolean
 - transform() -> list(string)
+
+---
+I have changed the input rules file, could you update the get_headers method in class CsvProcessor
