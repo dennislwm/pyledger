@@ -29,6 +29,7 @@ This project uses several methods and products to optimize your workflow.
 - Use a cloud LLM (**ChatGPT**) to facilitate shaping and writing playbook and runbooks.
 - Use a diagram as code tool (**Mermaid**) to draw any system design or diagram.
 - Use a Python LLM-enabled CLI (**Aider.chat**) to facilitate coding.
+- Use a VS Code LLM-enabled extension (**Pythagora**) to facilitate coding.
 - Use a build tool (**Makefile**) to automate your build tasks.
 - Use a package manager (**pipenv**) to manage your dependencies.
 - Use a testing framework (**pytest**) to automate your testing.
@@ -39,38 +40,54 @@ This project uses several methods and products to optimize your workflow.
 # 3. User Personas
 ## 3.1 RACI Matrix
 
-|            Category            |                    Activity                     | Developer | DevSecOps |
-|:------------------------------:|:-----------------------------------------------:|:---------:|:---------:|
-| Installation and Configuration | Configure `aider.chat` in your local repository |           |    R,A    |
-| Installation and Configuration |          Create the project structure           |           |    R,A    |
-| Installation and Configuration |               Create a `Makefile`               |           |    R,A    |
-|       Shaping by GPT-4o        |           Create a `conftest.py` file           |    R,A    |           |
-|       Shaping by GPT-4o        |            Create and run unit tests            |    R,A    |           |
-|       Shaping by GPT-4o        |         Create a main `ledger.py` file          |    R,A    |           |
+|            Category            |                        Activity                        | Developer | DevSecOps |
+|:------------------------------:|:------------------------------------------------------:|:---------:|:---------:|
+| Installation and Configuration | [Configure `aider.chat` in your local repository][t01] |           |    R,A    |
+| Installation and Configuration | [Configure `gpt-pilot` in your local workstation][t02] |           |    R,A    |
+| Installation and Configuration |          [Create the project structure][t03]           |           |    R,A    |
+| Installation and Configuration |               [Create a `Makefile`][t04]               |           |    R,A    |
+| Installation and Configuration |  [Create a `schema.json` to validate your rules][t05]  |           |    R,A    |
+|       Shaping by GPT-4o        |           [Create a `conftest.py` file][t06]           |    R,A    |           |
+|       Shaping by GPT-4o        |            [Create and run unit tests][t07]            |    R,A    |           |
+|       Shaping by GPT-4o        |         [Create a main `ledger.py` file][t08]          |    R,A    |           |
+
+[t01]: #51-configure-aiderchat-in-your-local-repository
+[t02]: #52-configure-gpt-pilot-in-your-local-workstation
+[t03]: #53-create-the-project-structure
+[t04]: #54-create-a-makefile
+[t05]: #55-create-a-schemajson-to-validate-your-rules
+[t06]: #61-create-a-conftestpy-file
+[t07]: #62-create-and-run-unit-tests
+[t08]: #63-create-a-main-ledgerpy-file
 
 ---
 # 4. Requirements
 ## 4.1. Local workstation
 
-- ChatGPT Desktop for macOS
+- `aider-chat` 0.36.0 (python3 -m pip install)
+- `check-jsonschema` version 0.26.1 (python3 -m pip install)
 - Python 3.11.6 (`/opt/homebrew/bin/python3`)
-  - `aider-chat==0.36.0` (`python3 -m pip install`)
   - `pandas==2.2.2` (`pipenv install`)
   - `typer==0.12.3` (`pipenv install`)
   - `pyyaml==6.0.1` (`pipenv install`)
   - `openpyxl==3.1.3` (`pipenv install`)
   - `pytest==8.2.2` (`pipenv install --dev`)
+- Visual Studio Code
+  - Pythagora extension (`gpt-pilot`)
 
 ## 4.2. SaaS accounts
 
 - GitHub account
-- OpenAI ChatGPT Plus account
+- OpenAI ChatGPT API account
 
 ---
 # 5. Installation and Configuration
 ## 5.1. Configure `aider.chat` in your local repository
 
 This runbook should be performed by the DevSecOps Engineer.
+
+<details>
+    <summary>Click here to configure aider.chat in your local repository.</strong></summary>
 
 1. Open a bash terminal and navigate to your workspace > type the following command.
 
@@ -84,16 +101,94 @@ git clone https://github.com/dennislwm/pyledger
 export OPENAI_API_KEY=<TOKEN>
 ```
 
-3. Navigate to your local repository `pyledger`, and type the command:
+3. Create an `.aider.conf.yml` file, replace the `<MODEL>` with an LLM model, e.g. `openai/gpt-4o-mini`.
+
+```yml
+##########################################################
+# Sample .aider.conf.yml
+# This file lists *all* the valid configuration entries.
+# Place in your home dir, or at the root of your git repo.
+##########################################################
+
+# Note: You can only put OpenAI and Anthropic API keys in the yaml
+# config file. Keys for all APIs can be stored in a .env file
+# https://aider.chat/docs/config/dotenv.html
+
+#######
+# Main:
+
+## Specify the model to use for the main chat
+model: <MODEL>
+```
+
+4. Navigate to your local repository `pyledger`, and type the command:
 
 ```sh
 source .env
 aider --version
 ```
 
+</details>
+
+
 > Note: You do not need to launch a virtual environment, if the package `aider-chat` was `pip` installed globally.
 
-## 5.2. Create the project structure
+## 5.2. Configure `gpt-pilot` in your local workstation
+
+This runbook should be performed by the DevSecOps Engineer.
+
+<details>
+    <summary>Click here to configure gpt-pilot in your local workstation.</strong></summary>
+
+1. Open a file explore > navigate to your installation folder for the Pythagora VS Code extension.
+
+```sh
+~/Documents/Pythagora/gpt-pilot
+```
+
+2. Open `config.json` and replace the `<API_TOKEN>` with your API token. Optionally, replace the `<AGENT_MODEL>` with a specific model, e.g. `gpt-4o-mini`.
+
+```json
+{
+  "llm": {
+    "openai": {
+      "api_key": "<API_TOKEN>",
+    }
+  },
+  "agent": {
+    "default": {
+      "provider": "openai",
+      "model": "`<AGENT_MODEL>",
+    },
+    "CodeMonkey": {
+      "provider": "openai",
+      "model": "`<AGENT_MODEL>",
+    },
+    "CodeMonkey.describe_files": {
+      "provider": "openai",
+      "model": "`<AGENT_MODEL>",
+    }
+  }
+}
+```
+
+3. Restart your VS Code application > Open a new or existing project > Create a new feature branch.
+
+4. Click on Pythagora in the left-hand menu > Click Create New App.
+  - Project Name: `pyledger-v0.3`
+
+5. For existing projects, click **Import An Existing Project**.
+  - Pythagora copies your existing project to a new folder under its workspace  `~/Documents/Pythagora/gpt-pilot/workspace/`.
+
+6. Ensure you delete any sensitive files in the project under Pythagora workspace.
+  - `.env`
+
+7. For new projects, follow and complete the prompts.
+
+</details>
+
+
+## 5.3. Create the project structure
 
 This runbook should be performed by the Developer.
 
@@ -113,7 +208,7 @@ pyledger/
    |- rules_hsbc.yaml
 ```
 
-## 5.3. Create a `Makefile`
+## 5.4. Create a `Makefile`
 
 This runbook should be performed by the Developer.
 
@@ -148,6 +243,159 @@ test_verbose:
 ```
 
 </details>
+
+
+## 5.5. Create a `schema.json` to validate your rules
+
+This runbook should be performed by the Developer.
+
+<details>
+    <summary>Click here to create a schema.json file to validate your rules.</strong></summary>
+
+1. Create a new file `app/schema.json`.
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "csv": {
+          "type": "object",
+          "properties": {
+            "header": {
+              "$ref": "#/$defs/set_header"
+            }
+          }
+        },
+        "xls": {
+          "type": "object",
+          "properties": {
+            "header": {
+              "$ref": "#/$defs/set_header"
+            },
+            "sheet": {
+              "$ref": "#/$defs/set_sheet"
+            }
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "required": [ "income", "expense" ],
+      "additionalProperties": false,
+      "properties": {
+        "income": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/set_transaction"
+          }
+        },
+        "expense": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/set_transaction"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "set_header": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "deposit": {
+          "type": "string"
+        },
+        "withdraw": {
+          "type": "string"
+        }
+      }
+    },
+    "set_sheet": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "first_row": {
+          "type": "number"
+        }
+      }
+    },
+    "set_transaction": {
+      "type": "object",
+      "required": [ "transaction_type", "debit_account", "credit_account" ],
+      "additionalProperties": false,
+      "properties": {
+        "transaction_type": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "debit_account": {
+          "type": "string"
+        },
+        "credit_account": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+```
+
+2. Create a `rules.yaml` file:
+
+```yml
+input:
+  csv:
+    header:
+      date: " Transaction Date"
+      description: "Description"
+      amount: "Amount"
+rules:
+  income:
+    - transaction_type: "Maturity of Fixed Deposit"
+      debit_account: "Assets:AU:Savings:HSBC"
+      credit_account: "Assets:AU:Term:HSBC:Aug23"
+    - transaction_type: "Interest"
+      debit_account: "Assets:AU:Savings:HSBC"
+      credit_account: "Income:AU:Interest"
+  expense:
+    - transaction_type: "*"
+      debit_account: "Expenses:AU"
+      credit_account: "Assets:AU:Savings:HSBC"
+```
+
+3. Open a shell terminal > run the following command to lint your `rules.yaml` file.
+
+```sh
+check-jsonschema --schemafile schema.json rules.yaml
+```
+
+4. If there are no validation errors, you should see the following output:
+
+```sh
+ok -- validation done
+```
+
+</details>
+
 
 ---
 # 6. Shaping by GPT-4o

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "csv": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "header": {
+              "$ref": "#/$defs/set_header"
+            }
+          }
+        },
+        "xls": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "header": {
+              "$ref": "#/$defs/set_header"
+            },
+            "sheet": {
+              "$ref": "#/$defs/set_sheet"
+            }
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "required": [ "income", "expense" ],
+      "additionalProperties": false,
+      "properties": {
+        "income": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/set_transaction"
+          }
+        },
+        "expense": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/set_transaction"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "set_header": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "deposit": {
+          "type": "string"
+        },
+        "withdraw": {
+          "type": "string"
+        }
+      }
+    },
+    "set_sheet": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "first_row": {
+          "type": "number"
+        }
+      }
+    },
+    "set_transaction": {
+      "type": "object",
+      "required": [ "transaction_type", "debit_account", "credit_account" ],
+      "additionalProperties": false,
+      "properties": {
+        "transaction_type": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "debit_account": {
+          "type": "string"
+        },
+        "credit_account": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
