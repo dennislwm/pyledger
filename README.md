@@ -46,19 +46,21 @@ This project uses several methods and products to optimize your workflow.
 | Installation and Configuration | [Configure `gpt-pilot` in your local workstation][t02] |           |    R,A    |
 | Installation and Configuration |          [Create the project structure][t03]           |           |    R,A    |
 | Installation and Configuration |               [Create a `Makefile`][t04]               |           |    R,A    |
-| Installation and Configuration |  [Create a `schema.json` to validate your rules][t05]  |           |    R,A    |
+| Installation and Configuration |  [Use `check-jsonschema` to validate your rules][t05]  |           |    R,A    |
 |       Shaping by GPT-4o        |           [Create a `conftest.py` file][t06]           |    R,A    |           |
 |       Shaping by GPT-4o        |            [Create and run unit tests][t07]            |    R,A    |           |
 |       Shaping by GPT-4o        |         [Create a main `ledger.py` file][t08]          |    R,A    |           |
+|           Execution            |     [Run `ledger.py` on a CSV or an XLS file][t09]     |           |    R,A    |
 
 [t01]: #51-configure-aiderchat-in-your-local-repository
 [t02]: #52-configure-gpt-pilot-in-your-local-workstation
 [t03]: #53-create-the-project-structure
 [t04]: #54-create-a-makefile
-[t05]: #55-create-a-schemajson-to-validate-your-rules
+[t05]: #55-use-check-jsonschema-to-validate-your-rules
 [t06]: #61-create-a-conftestpy-file
 [t07]: #62-create-and-run-unit-tests
 [t08]: #63-create-a-main-ledgerpy-file
+[t09]: #71-run-ledgerpy-on-a-csv-or-an-xls-file
 
 ---
 # 4. Requirements
@@ -245,12 +247,35 @@ test_verbose:
 </details>
 
 
-## 5.5. Create a `schema.json` to validate your rules
+## 5.5. Use `check-jsonschema` to validate your rules
 
 This runbook should be performed by the Developer.
 
+The `app/schema.json` supports the following rules file in YAML format (Bold **`key`** means required):
+- `input`: info for `<INPUT_FILE>`
+  - `csv`: info for CSV file
+    - `header`: header names
+      - `date`: header name for date column (Default: `Date`)
+      - `description`: header name for description column (Default: `Description`)
+      - `amount`: header name for amount column (Default: `Amount`)
+      - `withdraw`: header name for withdrawal column (Default: `Withdrawal`)
+      - `deposit`: header name for deposit column (Default: `Deposit`)
+  - `xls`: info for XLS file
+    - `header`: header names (same as above)
+    - `sheet`: info for XLS sheet
+      - `first_row`: the first row in sheet to use as header (default: `1`)
+- **`rules`**: rules applied to transform `<INPUT_FILE>` to `<OUTPUT_FILE>`
+  - **`income`**: array of transformation rules for an income row to an output ledger record
+    - `[-]`
+      - **`transaction_type`**: regex string used to match one or more rows with the `<INPUT_FILE>` `description` column
+      - `description`: description for ledger transaction (Default: value of the `<INPUT_FILE>` `description` column used)
+      - **`debit_account`**: debit account for ledger transaction
+      - **`credit_account`**: credit account for ledger transaction
+  - **`expense`**: aarray of transformation rules for an expense row to an output ledger record (same as above)
+
+
 <details>
-    <summary>Click here to create a schema.json file to validate your rules.</strong></summary>
+    <summary>Click here to use check-jsonschema to validate your rules.</strong></summary>
 
 1. Create a new file `app/schema.json`.
 
@@ -261,99 +286,10 @@ This runbook should be performed by the Developer.
   "additionalProperties": false,
   "properties": {
     "input": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "csv": {
-          "type": "object",
-          "properties": {
-            "header": {
-              "$ref": "#/$defs/set_header"
-            }
-          }
-        },
-        "xls": {
-          "type": "object",
-          "properties": {
-            "header": {
-              "$ref": "#/$defs/set_header"
-            },
-            "sheet": {
-              "$ref": "#/$defs/set_sheet"
-            }
-          }
-        }
-      }
+      "type": "object"
     },
     "rules": {
-      "type": "object",
-      "required": [ "income", "expense" ],
-      "additionalProperties": false,
-      "properties": {
-        "income": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/set_transaction"
-          }
-        },
-        "expense": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/set_transaction"
-          }
-        }
-      }
-    }
-  },
-  "$defs": {
-    "set_header": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "date": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "amount": {
-          "type": "string"
-        },
-        "deposit": {
-          "type": "string"
-        },
-        "withdraw": {
-          "type": "string"
-        }
-      }
-    },
-    "set_sheet": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "first_row": {
-          "type": "number"
-        }
-      }
-    },
-    "set_transaction": {
-      "type": "object",
-      "required": [ "transaction_type", "debit_account", "credit_account" ],
-      "additionalProperties": false,
-      "properties": {
-        "transaction_type": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "debit_account": {
-          "type": "string"
-        },
-        "credit_account": {
-          "type": "string"
-        }
-      }
+      "type": "object"
     }
   }
 }
@@ -388,7 +324,13 @@ rules:
 check-jsonschema --schemafile schema.json rules.yaml
 ```
 
-4. If there are no validation errors, you should see the following output:
+4. You can lint all files in a folder as follows:
+
+```sh
+check-jsonschema --schemafile schema.json rules/*
+```
+
+5. If there are no validation errors, you should see the following output:
 
 ```sh
 ok -- validation done
@@ -640,3 +582,25 @@ This runbook should be performed by the Developer with the [help](./chat/openai.
   ```
 
   </details>
+
+
+---
+# 7. Execution
+## 7.1. Run `ledger.py` on a CSV or an XLS file
+
+This runbook should be performed by the DevSecOps Engineer.
+
+<details>
+    <summary>Click here to run ledger.py on a CSV or an XLS file.</strong></summary>
+
+1. Open a shell and run the command `python ledger.py <INPUT_FILE> <RULES_FILE>`. For example:
+
+```sh
+cd app
+pipenv shell
+python ledger.py ../input/input_hsbc.csv ../rules/rules_hsbc.yaml
+```
+
+2. If successful, you should see a new file `app/output.txt` that contains your ledger file.
+
+</details>

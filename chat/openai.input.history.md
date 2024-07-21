@@ -100,3 +100,11 @@ I want to refactor the code to use object-oriented concepts:
 
 ---
 I have changed the input rules file, could you update the get_headers method in class CsvProcessor
+
+---
+I want to be able to specify the start of row using a rules.yaml file as follows when using a XLS file:
+
+input:
+  xls:
+    sheet:
+      first_row: 5
