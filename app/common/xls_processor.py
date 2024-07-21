@@ -14,8 +14,6 @@ class XlsProcessor(BaseProcessor, ABC):
 
   def get_header(self, rules) -> dict:
     headers = {**DEFAULT_HEADERS}
-    if 'input' in rules and 'csv' in rules['input'] and 'header' in rules['input']['csv']:
-      for header in rules['input']['csv']['header']:
-        key, value = next(iter(header.items()))
-        headers[key] = value
+    if 'input' in rules and 'xls' in rules['input'] and 'header' in rules['input']['xls']:
+        headers.update(rules['input']['xls']['header'])
     return headers
