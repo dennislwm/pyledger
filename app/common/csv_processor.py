@@ -14,8 +14,8 @@ class CsvProcessor(BaseProcessor, ABC):
 
   def get_header(self, rules) -> dict:
     headers = {**DEFAULT_HEADERS}
-    if 'input' in rules and 'csv' in rules['input'] and 'header' in rules['input']['csv']:
-      for header in rules['input']['csv']['header']:
-        key, value = next(iter(header.items()))
-        headers[key] = value
+    if 'input' in rules and 'csv' in rules['input']:
+        csv_rules = rules['input']['csv']
+        if 'header' in csv_rules:
+            headers.update(csv_rules['header'])
     return headers
