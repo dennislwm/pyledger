@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import dateutil.parser
-import fnmatch
+import fnmatch, re
 import yaml
 
 DEFAULT_HEADERS= {
@@ -40,10 +40,11 @@ class BaseProcessor(ABC):
   def normalize_transactions(self, transactions_df: any, headers: dict) -> any:
     # Normalize amount, income and expense.
     if headers['amount'] in transactions_df.columns:
-      transactions_df[headers['withdraw']] = transactions_df[headers['amount']].apply(lambda x: x if (float(x.replace(',', ''))<0) else 0)
-      transactions_df[headers['deposit']] = transactions_df[headers['amount']].apply(lambda x: x if (float(x.replace(',', ''))>0) else 0)
+      transactions_df[headers['withdraw']] = transactions_df[headers['amount']].apply(lambda x: float(x.replace(',', '')) if (float(x.replace(',', ''))<0) else 0)
+      transactions_df[headers['deposit']] = transactions_df[headers['amount']].apply(lambda x: float(x.replace(',', '')) if (float(x.replace(',', ''))>0) else 0)
     else:
-      transactions_df[headers['amount']] = transactions_df[headers['deposit']] + transactions_df[headers['withdraw']]
+      transactions_df[headers['withdraw']] = -transactions_df[headers['withdraw']]
+    transactions_df[headers['amount']] = transactions_df[headers['deposit']] + transactions_df[headers['withdraw']]
     return transactions_df
 
   def transform_transactions(self, transactions_df: any, rules: dict, headers: dict):
@@ -70,6 +71,8 @@ class BaseProcessor(ABC):
 
   def match_rule(self, transaction_type, rules):
     for rule in rules:
-      if fnmatch.fnmatch(transaction_type.lower(), rule['transaction_type'].lower()):
+      # if fnmatch.fnmatch(transaction_type.lower(), rule['transaction_type'].lower()):
+      regex = fnmatch.translate(rule['transaction_type'].lower())
+      if not re.search(regex, transaction_type.lower()) is None:
         return rule
     return None

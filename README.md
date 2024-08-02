@@ -22,19 +22,58 @@ The audience for this document includes:
 
 2. The `pyledger` allows the User to create a rules file that will govern the transformation process of an input file to an output file, hence reducing the error rate, while increasing the reusability and adding version control for a configuration as code.
 
+3. The rules will be evaluated in order of sequence, i.e. the first rule has higher precedence over the other rules, etc.
+
 ## 2.2. Workflow
 
 This project uses several methods and products to optimize your workflow.
-- Use a version control system (**GitHub**) to track your changes and collaborate with others.
-- Use a cloud LLM (**ChatGPT**) to facilitate shaping and writing playbook and runbooks.
-- Use a diagram as code tool (**Mermaid**) to draw any system design or diagram.
-- Use a Python LLM-enabled CLI (**Aider.chat**) to facilitate coding.
-- Use a VS Code LLM-enabled extension (**Pythagora**) to facilitate coding.
-- Use a build tool (**Makefile**) to automate your build tasks.
-- Use a package manager (**pipenv**) to manage your dependencies.
-- Use a testing framework (**pytest**) to automate your testing.
-- Use a linter (**check-jsonschema**) to lint the rules YAML file.
-- Use a containerization platform (**Docker**) to run your application in any environment.
+
+* Use a version control system (**GitHub**) to track your changes and collaborate with others.
+* Use a cloud LLM (**ChatGPT**) to facilitate shaping and writing playbook and runbooks.
+* Use a diagram as code tool (**Mermaid**) to draw any system design or diagram.
+* Use a Python LLM-enabled CLI (**Aider.chat**) to facilitate coding.
+* Use a VS Code LLM-enabled extension (**Pythagora**) to facilitate coding.
+* Use a build tool (**Makefile**) to automate your build tasks.
+* Use a package manager (**pipenv**) to manage your dependencies.
+* Use a testing framework (**pytest**) to automate your testing.
+* Use a linter (**check-jsonschema**) to lint the rules YAML file.
+* Use a containerization platform (**Docker**) to run your application in any environment.
+
+## 2.3. Roadmap
+
+This project has the following tasks planned for its roadmap:
+
+## 2.4. Trace Python Main Application
+
+```mermaid
+%%{ init: { 'theme': 'dark' } }%%
+gantt
+    title Trace Showing Python Main Application
+    dateFormat x
+    axisFormat %S.%L
+
+    section ledger.py
+    main                                : 0, 900ms
+    Typer.parse_argument                : crit, code1, 0, 100ms
+    Processor.__init__                  : code2, after code1, 400ms
+    Processor.load_rules                : code3, after code1, 100ms
+    Processor.get_headers               : code4, after code3, 100ms
+    Processor.__get_first_row           : code5, after code4, 100ms
+    Processor.load_input_files          : after code5, 100ms
+    Processor.sort_transactions         : code6, after code2, 100ms
+    Processor.normalize_transactions    : code7, after code6, 100ms
+    Processor.transform_transactions    : code8, after code7, 100ms
+    file.write                          : after code8, 100ms
+```
+
+### Feature
+
+* Add `output.amount.prefix` to allow customisable prefix for the output amount, e.g. `$`.
+* Add `output.filename` to allow customisable output filename, e.g. `output.txt`.
+
+### Fix
+
+* Replace any special characters and UPPER case letters within `description` with spaces and small case letters.
 
 ---
 # 3. User Personas
