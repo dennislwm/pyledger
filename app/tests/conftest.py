@@ -1,7 +1,21 @@
 import pytest
 import pandas as pd
 import yaml
+from pathlib import Path
 from typer.testing import CliRunner
+from abc import ABC
+from common.base_processor import BaseProcessor
+
+class TestProcessor(BaseProcessor, ABC):
+  def load_input_file(self, file_path: Path) -> pd.DataFrame:
+    pass
+
+  def get_header(self, rules) -> dict:
+    pass
+
+@pytest.fixture
+def base_processor():
+  return TestProcessor()
 
 @pytest.fixture
 def sample_transactions():

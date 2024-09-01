@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
+from jsonschema import validate, ValidationError
 import dateutil.parser
 import fnmatch, re
-import yaml
+import json, yaml
 
 DEFAULT_HEADERS= {
   "date": "Date",
@@ -27,9 +28,17 @@ class BaseProcessor(ABC):
     """Return the headers attribute."""
     pass
 
-  def load_rules(self, file_path) -> dict:
+  def load_rules(self, file_path: str, schema_path: str="schema.json") -> dict:
     with open(file_path, 'r') as file:
-      return yaml.safe_load(file)
+      rules = yaml.safe_load(file)
+      file.close()
+    with open(schema_path, 'r') as sf:
+      schema = json.load(sf)
+      sf.close()
+    errors = validate(rules, schema)
+    if errors:
+      raise ValidationError(f"Validation Errors: {errors}")
+    return rules
 
   def sort_transactions(self, transactions_df: any, headers: dict) -> any:
     # Sort the transactions by date in ascending order
