@@ -124,6 +124,8 @@ cat common/base_processor.py | llm 'Edit the python function load_rules to valid
 
 cat common/base_processor.py | llm 'Suggest what to test for sort_transactions method in class BaseProcessor and write test functions for each test case with pytest class TestBaseProcessor but do not use unittest.mock or pandas, and use an existing schema.json file'
 
+cat common/*.py tests/conftest.py | llm 'Suggest what to test for transform_transactions method in class BaseProcessor and write test functions for each test case with pytest class TestBaseProcessor but do not use unittest.mock or pandas, and use an existing schema.json file, and reuse any fixtures'
+
 ---
 ## Add docstring comments
 

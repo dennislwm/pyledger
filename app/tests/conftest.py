@@ -25,7 +25,7 @@ input:
       date: " Transaction Date"
 rules:
   income:
-    - transaction_type: "*"
+    - transaction_type: "TRANSFER RENT PAYMENT Wyndham Realty"
       debit_account: "Assets:AU:Savings:HSBC"
       credit_account: "Income:AU:Interest"
   expense:
