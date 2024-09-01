@@ -1,8 +1,7 @@
-import os
-import pytest
 import pandas as pd
+import pytest
 import tempfile
-import yaml
+import os, yaml
 from pathlib import Path
 from typer.testing import CliRunner
 from abc import ABC
@@ -69,7 +68,6 @@ def sample_csv_file():
     f.write(SAMPLE_CSV.strip())
 
   yield csv_file
-
   # Cleanup files after test
   os.remove(csv_file.name)
 
@@ -81,7 +79,6 @@ def sample_rules_file(sample_rules):
   # Write to temporary CSV file
   with open(rules_file.name, 'w') as f:
     f.write(SAMPLE_RULES.strip())
-    # yaml.dump(sample_rules, f, default_flow_style=False)
 
   yield rules_file
   # Cleanup files after test
@@ -93,7 +90,6 @@ def sample_output_file():
   output_file = tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.txt')
 
   yield output_file
-
   # Cleanup files after test
   os.remove(output_file.name)
 
