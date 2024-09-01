@@ -31,6 +31,21 @@
         }
       }
     },
+    "output": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "object",
+          "properties": {
+            "prefix": {
+              "type": "string"
+            }
+          },
+          "required": ["prefix"]
+        }
+      },
+      "required": ["amount"]
+    },
     "rules": {
       "type": "object",
       "required": [ "income", "expense" ],

@@ -85,7 +85,7 @@ def sample_rules_file(sample_rules):
 
   yield rules_file
   # Cleanup files after test
-  # os.remove(rules_file.name)
+  os.remove(rules_file.name)
 
 @pytest.fixture
 def sample_output_file():

@@ -123,3 +123,8 @@ cat common/base_processor.py | llm 'Edit the python function load_rules to valid
 ## Suggest test cases for a method and write test functions for each test case
 
 cat common/base_processor.py | llm 'Suggest what to test for sort_transactions method in class BaseProcessor and write test functions for each test case with pytest class TestBaseProcessor but do not use unittest.mock or pandas, and use an existing schema.json file'
+
+---
+## Add docstring comments
+
+cat common/base_processor.py | llm 'Add docstring comments to each method of class BaseProcessor'
