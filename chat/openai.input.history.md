@@ -108,3 +108,18 @@ input:
   xls:
     sheet:
       first_row: 5
+
+---
+## Create a `schema.json` file
+
+cat ../rules/rules_hsbc.yaml | llm 'Generate a schema.json file using the specification from https://json-schema.org/draft/2020-12/schema'
+
+---
+## Enhance the `load_rules` method to validate the rules file against a JSON schema
+
+cat common/base_processor.py | llm 'Edit the python function load_rules to validate the yaml file using a schema.json file and library check-jsonschema'
+
+---
+## Suggest test cases for a method and write test functions for each test case
+
+cat common/base_processor.py | llm 'Suggest what to test for sort_transactions method in class BaseProcessor and write test functions for each test case with pytest class TestBaseProcessor but do not use unittest.mock or pandas, and use an existing schema.json file'
