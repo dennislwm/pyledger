@@ -130,7 +130,7 @@ class BaseProcessor(ABC):
       if rule:
         debit_account = rule['debit_account']
         credit_account = rule['credit_account']
-        output_description = rule.get('description', description).replace('\n', ' ')
+        output_description = re.sub(r'[^a-zA-Z0-9 ]+', ' ', rule.get('description', description)).title().replace('\n', ' ')
         output.append(f"{formatted_date} {output_description}\n\t{debit_account:<50}{amount_prefix}{amount}\n\t{credit_account}")
     return output
 

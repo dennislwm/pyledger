@@ -13,7 +13,7 @@ def test_transform_transactions_basic(csv_processor, sample_rules):
     output = csv_processor.transform_transactions(transactions_df, sample_rules, csv_processor.headers)
 
     assert len(output) == 1
-    assert "2024/07/19 TRANSFER RENT PAYMENT Wyndham Realty" in output[0]
+    assert "2024/07/19 Transfer Rent Payment Wyndham Realty" in output[0]
     assert "Assets:AU:Savings:HSBC" in output[0]
     assert "Income:AU:Interest" in output[0]
 
@@ -44,7 +44,7 @@ def test_transform_transactions_negative_amount(csv_processor, sample_rules):
     output = csv_processor.transform_transactions(transactions_df, sample_rules, csv_processor.headers)
 
     assert len(output) == 1
-    assert "2024/07/19 RENT PAID" in output[0]
+    assert "2024/07/19 Rent Paid" in output[0]
     assert "Expenses:AU" in output[0]
     assert "Assets:AU:Savings:HSBC" in output[0]
 
@@ -70,6 +70,6 @@ def test_transform_transactions_different_date_format(csv_processor, sample_rule
     output = csv_processor.transform_transactions(transactions_df, sample_rules, csv_processor.headers)
 
     assert len(output) == 1
-    assert "2024/07/19 HONORABLE EXPENSE" in output[0]
+    assert "2024/07/19 Honorable Expense" in output[0]
     assert "Expenses:AU" in output[0]
     assert "Assets:AU:Savings:HSBC" in output[0]
