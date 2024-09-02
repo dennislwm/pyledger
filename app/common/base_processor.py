@@ -114,6 +114,7 @@ class BaseProcessor(ABC):
     """
     income_rules = rules['rules']['income']
     expense_rules = rules['rules']['expense']
+    amount_prefix = rules.get('output', {}).get('amount', {}).get('prefix', '$')  # Default to '$' if not defined
 
     output = []
     for _, row in transactions_df.iterrows():
@@ -130,7 +131,7 @@ class BaseProcessor(ABC):
         debit_account = rule['debit_account']
         credit_account = rule['credit_account']
         output_description = rule.get('description', description).replace('\n', ' ')
-        output.append(f"{formatted_date} {output_description}\n\t{debit_account:<50}${amount}\n\t{credit_account}")
+        output.append(f"{formatted_date} {output_description}\n\t{debit_account:<50}{amount_prefix}{amount}\n\t{credit_account}")
     return output
 
   def match_rule(self, transaction_type, rules):

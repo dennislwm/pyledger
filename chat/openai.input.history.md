@@ -130,3 +130,10 @@ cat common/*.py tests/conftest.py | llm 'Suggest what to test for transform_tran
 ## Add docstring comments
 
 cat common/base_processor.py | llm 'Add docstring comments to each method of class BaseProcessor'
+
+--
+## Add feature `output` in rules file
+
+modify BaseProcessor.transform_transactions method to use '$' in the output by default, unless the rules_file output.amount.prefix is not defined
+
+modify main function in ledger.py to write output to standard output, unless the rules_file output.path is not None (replace and remove the output_file argument of main)
