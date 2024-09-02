@@ -28,7 +28,7 @@
 
 ## Purpose
 
-This document describes the `pyledger` CLI application to automate debit and credit transactions for Ledger, a double-entry accounting system.
+This document describes the `pyledger` CLI application to automate debit and credit transactions for [Ledger](https://github.com/ledger/ledger), a double-entry accounting system.
 
 ## Audience
 
