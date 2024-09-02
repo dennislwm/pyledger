@@ -3,6 +3,7 @@ from pathlib import Path
 from common.base_processor import BaseProcessor, DEFAULT_HEADERS
 import pandas as pd
 
+
 class CsvProcessor(BaseProcessor, ABC):
   def __init__(self, rules_file_path: Path, input_file_path: Path):
     """
@@ -49,8 +50,8 @@ class CsvProcessor(BaseProcessor, ABC):
     Defaults to the headers defined in DEFAULT_HEADERS if no custom headers are found.
     """
     headers = {**DEFAULT_HEADERS}
-    if 'input' in rules and 'csv' in rules['input']:
-      csv_rules = rules['input']['csv']
-      if 'header' in csv_rules:
-        headers.update(csv_rules['header'])
+    if "input" in rules and "csv" in rules["input"]:
+      csv_rules = rules["input"]["csv"]
+      if "header" in csv_rules:
+        headers.update(csv_rules["header"])
     return headers

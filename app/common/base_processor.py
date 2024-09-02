@@ -1,16 +1,19 @@
 from abc import ABC, abstractmethod
 from jsonschema import validate, ValidationError
 import dateutil.parser
-import fnmatch, re
-import json, yaml
+import fnmatch
+import re
+import json
+import yaml
 
-DEFAULT_HEADERS= {
+DEFAULT_HEADERS = {
   "date": "Date",
   "description": "Description",
   "income": "Deposit",
   "withdraw": "Withdrawal",
-  "deposit": "Amount"
+  "deposit": "Amount",
 }
+
 
 class BaseProcessor(ABC):
   """Abstract Base Class for processing financial transaction data."""
@@ -45,7 +48,7 @@ class BaseProcessor(ABC):
     """
     pass
 
-  def load_rules(self, file_path: str, schema_path: str="schema.json") -> dict:
+  def load_rules(self, file_path: str, schema_path: str = "schema.json") -> dict:
     """Load validation rules from a YAML file and validate against a JSON schema.
 
     Args:
@@ -58,10 +61,10 @@ class BaseProcessor(ABC):
     Raises:
       ValidationError: If the rules do not conform to the schema.
     """
-    with open(file_path, 'r') as file:
+    with open(file_path, "r") as file:
       rules = yaml.safe_load(file)
       file.close()
-    with open(schema_path, 'r') as sf:
+    with open(schema_path, "r") as sf:
       schema = json.load(sf)
       sf.close()
     errors = validate(rules, schema)
@@ -79,8 +82,10 @@ class BaseProcessor(ABC):
     Returns:
       any: The DataFrame sorted by date.
     """
-    transactions_df['sort'] = transactions_df[headers['date']].apply(dateutil.parser.parse)
-    transactions_df = transactions_df.sort_values(by='sort')
+    transactions_df["sort"] = transactions_df[headers["date"]].apply(
+      dateutil.parser.parse
+    )
+    transactions_df = transactions_df.sort_values(by="sort")
     return transactions_df
 
   def normalize_transactions(self, transactions_df: any, headers: dict) -> any:
@@ -93,12 +98,18 @@ class BaseProcessor(ABC):
     Returns:
       any: The normalized DataFrame with properly categorized amounts.
     """
-    if headers['amount'] in transactions_df.columns:
-      transactions_df[headers['withdraw']] = transactions_df[headers['amount']].apply(lambda x: float(x.replace(',', '')) if (float(x.replace(',', ''))<0) else 0)
-      transactions_df[headers['deposit']] = transactions_df[headers['amount']].apply(lambda x: float(x.replace(',', '')) if (float(x.replace(',', ''))>0) else 0)
+    if headers["amount"] in transactions_df.columns:
+      transactions_df[headers["withdraw"]] = transactions_df[headers["amount"]].apply(
+        lambda x: float(x.replace(",", "")) if (float(x.replace(",", "")) < 0) else 0
+      )
+      transactions_df[headers["deposit"]] = transactions_df[headers["amount"]].apply(
+        lambda x: float(x.replace(",", "")) if (float(x.replace(",", "")) > 0) else 0
+      )
     else:
-      transactions_df[headers['withdraw']] = -transactions_df[headers['withdraw']]
-    transactions_df[headers['amount']] = transactions_df[headers['deposit']] + transactions_df[headers['withdraw']]
+      transactions_df[headers["withdraw"]] = -transactions_df[headers["withdraw"]]
+    transactions_df[headers["amount"]] = (
+      transactions_df[headers["deposit"]] + transactions_df[headers["withdraw"]]
+    )
     return transactions_df
 
   def transform_transactions(self, transactions_df: any, rules: dict, headers: dict):
@@ -112,26 +123,34 @@ class BaseProcessor(ABC):
     Returns:
       list: A list of transformed transaction strings ready for output.
     """
-    income_rules = rules['rules']['income']
-    expense_rules = rules['rules']['expense']
-    amount_prefix = rules.get('output', {}).get('amount', {}).get('prefix', '$')  # Default to '$' if not defined
+    income_rules = rules["rules"]["income"]
+    expense_rules = rules["rules"]["expense"]
+    amount_prefix = (
+      rules.get("output", {}).get("amount", {}).get("prefix", "$")
+    )  # Default to '$' if not defined
 
     output = []
     for _, row in transactions_df.iterrows():
-      date = dateutil.parser.parse(row[headers['date']])
-      formatted_date = date.strftime('%Y/%m/%d')
-      description = row[headers['description']]
-      amount_str = str(row[headers['amount']])
+      date = dateutil.parser.parse(row[headers["date"]])
+      formatted_date = date.strftime("%Y/%m/%d")
+      description = row[headers["description"]]
+      amount_str = str(row[headers["amount"]])
       # Remove commas from the amount string and convert to float
-      amount = float(amount_str.replace(',', ''))
+      amount = float(amount_str.replace(",", ""))
       applicable_rules = income_rules if amount > 0 else expense_rules
       amount = abs(amount)
       rule = self.match_rule(description, applicable_rules)
       if rule:
-        debit_account = rule['debit_account']
-        credit_account = rule['credit_account']
-        output_description = re.sub(r'[^a-zA-Z0-9 ]+', ' ', rule.get('description', description)).title().replace('\n', ' ')
-        output.append(f"{formatted_date} {output_description}\n\t{debit_account:<50}{amount_prefix}{amount}\n\t{credit_account}")
+        debit_account = rule["debit_account"]
+        credit_account = rule["credit_account"]
+        output_description = (
+          re.sub(r"[^a-zA-Z0-9 ]+", " ", rule.get("description", description))
+          .title()
+          .replace("\n", " ")
+        )
+        output.append(
+          f"{formatted_date} {output_description}\n\t{debit_account:<50}{amount_prefix}{amount}\n\t{credit_account}"
+        )
     return output
 
   def match_rule(self, transaction_type, rules):
@@ -146,7 +165,7 @@ class BaseProcessor(ABC):
     """
     for rule in rules:
       # if fnmatch.fnmatch(transaction_type.lower(), rule['transaction_type'].lower()):
-      regex = fnmatch.translate(rule['transaction_type'].lower())
-      if not re.search(regex, transaction_type.lower()) is None:
+      regex = fnmatch.translate(rule["transaction_type"].lower())
+      if re.search(regex, transaction_type.lower()) is not None:
         return rule
     return None

@@ -1,6 +1,6 @@
 include .env
 
-.PHONY: default aider aider_dryrun install_new install_test llm run shell shell_clean test test_verbose
+.PHONY: default aider aider_dryrun install_new install_test llm pre-commit run shell shell_clean test test_verbose
 SHELL := /bin/bash
 
 default: test
@@ -18,6 +18,9 @@ install_new:
 llm:
 	@test $(INPUT) || ( echo [Usage] make llm INPUT='<input>'; exit 1 )
 	@cat ledger.py common/*.py tests/*.py | llm $(INPUT)
+
+pre-commit:
+	@pre-commit run --all-files
 
 run:
 	python ledger.py
