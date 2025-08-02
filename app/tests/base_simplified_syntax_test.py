@@ -43,6 +43,19 @@ class TestBaseProcessorSimplifiedSyntax:
         # Assert: Should convert contains pattern to wildcard pattern
         assert result == expected_output, f"Expected '{expected_output}', but got '{result}'"
 
+    def test_converts_all_pattern_types(self, base_processor, pattern_conversion_test_cases):
+        """Test convert_pattern() handles all pattern types correctly"""
+        for test_case in pattern_conversion_test_cases:
+            # Arrange: Get input and expected output from test case
+            input_pattern = test_case["input"]
+            expected_output = test_case["expected"]
+            
+            # Act: Call convert_pattern function
+            result = base_processor.convert_pattern(input_pattern)
+            
+            # Assert: Should convert pattern correctly
+            assert result == expected_output, f"For input '{input_pattern}', expected '{expected_output}', but got '{result}'"
+
     def test_transform_rules_complete_integration(self, base_processor, comprehensive_simplified_rules, expected_legacy_transformation, shortcuts_data):
         """Test transform_rules() orchestrates complete transformation from simplified to legacy format"""
         # Arrange: Use comprehensive simplified rules fixture and expected legacy transformation fixture

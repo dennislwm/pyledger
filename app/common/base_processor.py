@@ -64,6 +64,12 @@ class BaseProcessor(ABC):
     with open(file_path, "r") as file:
       rules = yaml.safe_load(file)
       file.close()
+    
+    # Transform simplified syntax if present
+    if self.has_simplified_syntax(rules):
+      shortcuts = rules.get('accounts', {})
+      rules = self.transform_rules(rules, shortcuts)
+    
     with open(schema_path, "r") as sf:
       schema = json.load(sf)
       sf.close()
@@ -179,8 +185,8 @@ class BaseProcessor(ABC):
     Returns:
       bool: True if simplified syntax is detected, False otherwise.
     """
-    # Check if any rule contains 'match' field (simplified syntax)
-    if 'rules' not in rules:
+    # Check if rules is None or empty (empty YAML file case)
+    if not rules or 'rules' not in rules:
       return False
       
     for rule_type in ['income', 'expense']:
@@ -200,12 +206,14 @@ class BaseProcessor(ABC):
     Returns:
       str: The converted pattern in legacy wildcard format (e.g., "*salary*").
     """
-    CONTAINS_PREFIX = "contains "
-    
-    if pattern.startswith(CONTAINS_PREFIX):
-      # Remove "contains " prefix and wrap with wildcards
-      content = pattern[len(CONTAINS_PREFIX):]
-      return f"*{content}*"
+    if pattern.startswith('contains '):
+      return f"*{pattern[9:]}*"
+    elif pattern.startswith('starts with '):
+      return f"{pattern[12:]}*"
+    elif pattern.startswith('ends with '):
+      return f"*{pattern[10:]}"
+    elif pattern.startswith('exactly '):
+      return pattern[8:]
     
     # Return pattern unchanged if no conversion is needed
     return pattern

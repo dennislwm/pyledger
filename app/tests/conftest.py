@@ -245,3 +245,15 @@ def pattern_conversion_test_data():
         "input_pattern": "contains salary",
         "expected_output": "*salary*"
     }
+
+
+@pytest.fixture
+def pattern_conversion_test_cases():
+    """Test data for all pattern conversion types"""
+    return [
+        {"input": "contains salary", "expected": "*salary*"},
+        {"input": "starts with TRANSFER", "expected": "TRANSFER*"},
+        {"input": "ends with PAYMENT", "expected": "*PAYMENT"},
+        {"input": "exactly Rent", "expected": "Rent"},
+        {"input": "unknown pattern", "expected": "unknown pattern"}
+    ]
