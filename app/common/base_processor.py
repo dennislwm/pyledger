@@ -5,7 +5,7 @@ import fnmatch
 import re
 import json
 import yaml
-
+import copy
 DEFAULT_HEADERS = {
   "date": "Date",
   "description": "Description",
@@ -169,3 +169,93 @@ class BaseProcessor(ABC):
       if re.search(regex, transaction_type.lower()) is not None:
         return rule
     return None
+
+  def has_simplified_syntax(self, rules: dict) -> bool:
+    """Detect if YAML rules use simplified syntax with 'match' field.
+
+    Args:
+      rules (dict): The rules dictionary to analyze.
+
+    Returns:
+      bool: True if simplified syntax is detected, False otherwise.
+    """
+    # Check if any rule contains 'match' field (simplified syntax)
+    if 'rules' not in rules:
+      return False
+      
+    for rule_type in ['income', 'expense']:
+      if rule_type in rules['rules']:
+        for rule in rules['rules'][rule_type]:
+          if 'match' in rule:
+            return True
+    
+    return False
+
+  def convert_pattern(self, pattern: str) -> str:
+    """Convert simplified syntax patterns to legacy wildcard patterns.
+    
+    Args:
+      pattern (str): The pattern in simplified syntax (e.g., "contains salary").
+      
+    Returns:
+      str: The converted pattern in legacy wildcard format (e.g., "*salary*").
+    """
+    CONTAINS_PREFIX = "contains "
+    
+    if pattern.startswith(CONTAINS_PREFIX):
+      # Remove "contains " prefix and wrap with wildcards
+      content = pattern[len(CONTAINS_PREFIX):]
+      return f"*{content}*"
+    
+    # Return pattern unchanged if no conversion is needed
+    return pattern
+
+  def resolve_account(self, account: str, shortcuts: dict) -> str:
+    """Resolve account shortcuts to full account paths.
+    
+    Args:
+      account (str): The account shortcut or full path.
+      shortcuts (dict): Dictionary mapping shortcuts to full account paths.
+      
+    Returns:
+      str: The full account path if shortcut found, otherwise returns original input.
+    """
+    return shortcuts.get(account, account)
+
+  def transform_rules(self, rules: dict, shortcuts: dict) -> dict:
+    """Transform simplified syntax rules to legacy format rules.
+    
+    This function orchestrates the complete transformation pipeline:
+    1. Convert patterns from simplified to wildcard format
+    2. Resolve account shortcuts to full account paths
+    3. Transform field names from simplified to legacy format
+    
+    Args:
+      rules (dict): Rules dictionary in simplified syntax format.
+      shortcuts (dict): Dictionary mapping shortcuts to full account paths.
+      
+    Returns:
+      dict: Transformed rules dictionary in legacy format.
+    """
+    # Create a deep copy to avoid modifying the original rules
+    transformed_rules = copy.deepcopy(rules)
+    
+    # Process both income and expense rules
+    for rule_type in ['income', 'expense']:
+      if rule_type in transformed_rules['rules']:
+        for rule in transformed_rules['rules'][rule_type]:
+          # Step 1: Convert pattern from simplified to wildcard format
+          if 'match' in rule:
+            rule['transaction_type'] = self.convert_pattern(rule['match'])
+            del rule['match']
+          
+          # Step 2: Resolve account shortcuts to full paths
+          if 'to' in rule:
+            rule['debit_account'] = self.resolve_account(rule['to'], shortcuts)
+            del rule['to']
+            
+          if 'from' in rule:
+            rule['credit_account'] = self.resolve_account(rule['from'], shortcuts)
+            del rule['from']
+    
+    return transformed_rules
