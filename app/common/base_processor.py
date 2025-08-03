@@ -67,8 +67,10 @@ class BaseProcessor(ABC):
     
     # Transform simplified syntax if present
     if self.has_simplified_syntax(rules):
-      shortcuts = rules.get('accounts', {})
-      rules = self.transform_rules(rules, shortcuts)
+      bank_shortcuts = self._load_bank_preset(rules.get('bank', ''))
+      user_shortcuts = rules.get('accounts', {})
+      combined_shortcuts = {**bank_shortcuts, **user_shortcuts}  # User overrides
+      rules = self.transform_rules(rules, combined_shortcuts)
     
     with open(schema_path, "r") as sf:
       schema = json.load(sf)
@@ -267,3 +269,23 @@ class BaseProcessor(ABC):
             del rule['from']
     
     return transformed_rules
+
+  def _load_bank_preset(self, bank_name: str) -> dict:
+    """Load account shortcuts from bank preset file.
+    
+    Args:
+      bank_name (str): The bank name to load presets for.
+      
+    Returns:
+      dict: The bank account shortcuts or empty dict if file not found.
+    """
+    if not bank_name:
+      return {}
+    
+    preset_path = f"presets/{bank_name}.yaml"
+    try:
+      with open(preset_path, 'r') as f:
+        preset = yaml.safe_load(f)
+        return preset.get('accounts', {}) if preset else {}
+    except (FileNotFoundError, yaml.YAMLError):
+      return {}  # Graceful degradation

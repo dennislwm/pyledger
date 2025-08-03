@@ -257,3 +257,24 @@ def pattern_conversion_test_cases():
         {"input": "exactly Rent", "expected": "Rent"},
         {"input": "unknown pattern", "expected": "unknown pattern"}
     ]
+
+@pytest.fixture
+def bank_preset_test_data():
+    """Minimal test data for bank preset functionality"""
+    return {
+        'preset_accounts': {
+            'checking': 'Assets:Bank:DBS:Checking',
+            'savings': 'Assets:Bank:DBS:Savings'
+        },
+        'user_rules': {
+            'bank': 'dbs',
+            'accounts': {'checking': 'Assets:Personal:Custom:Checking'},
+            'rules': {
+                'income': [{
+                    'match': 'contains salary',
+                    'to': 'checking',
+                    'from': 'Income:Salary'
+                }]
+            }
+        }
+    }

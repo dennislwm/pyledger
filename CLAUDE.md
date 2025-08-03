@@ -11,18 +11,42 @@ This is a Python CLI application for automating debit and credit transactions fo
 ### Quick Start
 ```bash
 cd app
-make install_new     # Install dependencies
-make test           # Run all tests
+make install_new     # Install dependencies with pipenv
+make test           # Run all tests via pipenv
 make run            # Run the application
 ```
 
 ### Key Commands
 ```bash
-# Dependencies: install_new
-# Application: run
-# Testing: test, test_verbose
-# Development: shell, shell_clean, pre-commit
+# Dependencies: install_new (uses pipenv install)
+# Application: run (python ledger.py)
+# Testing: test, test_verbose (uses PYTHONPATH=.:../ pipenv run pytest)
+# Development: shell (pipenv shell), shell_clean (pipenv --rm), pre-commit
 # Analysis: llm, aider, aider_dryrun
+```
+
+### Pipenv Integration
+The project uses pipenv for Python virtual environment and dependency management:
+
+```bash
+# Change to app directory (required for pipenv)
+cd app
+
+# Install dependencies
+pipenv install pandas==2.2.2 pyyaml==6.0.1 openpyxl==3.1.3 typer==0.12.3
+pipenv install --dev pytest==8.2.2
+
+# Activate virtual environment
+pipenv shell
+
+# Run tests with proper Python path
+PYTHONPATH=.:../ pipenv run pytest
+
+# Run specific test
+PYTHONPATH=.:../ pipenv run pytest tests/test_file.py::TestClass::test_method -v
+
+# Clean environment
+pipenv --rm
 ```
 
 ### Sample Usage and Output
@@ -104,9 +128,10 @@ rules:
 ### Testing Requirements
 - **Framework**: pytest with comprehensive unit tests
 - **Coverage**: All processors and main CLI functionality tested
-- **Execution**: `PYTHONPATH=.:../ pytest` for proper module imports
+- **Execution**: `PYTHONPATH=.:../ pipenv run pytest` for proper module imports and virtual environment
 - **Test Structure**: Each test class covers specific processor functionality
 - **Mock Data**: Tests use sample CSV/XLS data and rule configurations
+- **Virtual Environment**: Always use pipenv to ensure consistent Python environment and dependencies
 
 ### File Format Support
 
@@ -138,7 +163,21 @@ Current dependencies (managed by pipenv):
 - `jsonschema==4.23.0` for rules validation
 - `pytest==8.2.2` for testing
 
-**Installation**: Use `make install_new` for complete setup with pinned versions
+**Installation**: Use `make install_new` for complete setup with pinned versions via pipenv
+
+### Development Workflow
+
+**Virtual Environment Management:**
+- **Setup**: `cd app && pipenv install` creates virtual environment and installs dependencies
+- **Activation**: `cd app && pipenv shell` activates the virtual environment
+- **Testing**: `cd app && PYTHONPATH=.:../ pipenv run pytest` runs tests in isolated environment
+- **Cleanup**: `cd app && pipenv --rm` removes virtual environment when needed
+
+**Test-Driven Development:**
+- Always work from `app/` directory: `cd app`
+- Use `PYTHONPATH=.:../ pipenv run pytest tests/module_test.py::TestClass::test_method -v` for specific tests
+- Always run tests via pipenv to ensure proper dependency management
+- Virtual environment ensures consistent behavior across development machines
 
 ### Code Quality Standards
 

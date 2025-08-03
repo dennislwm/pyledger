@@ -63,12 +63,20 @@ A good unit test must have these four attributes (optimizing for all four simult
 - Avoid verbose AAA (Arrange-Act-Assert) comments when the code is self-explanatory
 - Consolidate similar test cases when they provide equivalent value
 - Remove redundant assertions that don't add meaningful coverage
+- **Choose inline data over fixtures for simple scenarios** - fixtures add maintenance overhead without proportional value
+
+**Test Data Cost Analysis**:
+- **Inline data preferred** for simple, single-use test scenarios (< 5 lines of setup)
+- **Fixtures justified** only when: multiple tests use the same data, complex setup (> 10 lines), or shared mock configuration
+- **Avoid fixture bloat** - creating fixtures for every piece of test data increases maintenance burden
+- **Economic principle**: Each fixture has ongoing maintenance cost - ensure it provides proportional testing value
 
 **Maintenance cost consideration**:
 - Each test case has ongoing maintenance cost
 - Prefer fewer, more comprehensive tests over many granular tests
 - Question whether each test provides proportional value to its implementation and maintenance cost
 - Regular review and removal of tests that no longer provide meaningful value
+- **Fixture economics**: Fixtures require dual maintenance (fixture definition + test usage) - use sparingly
 
 ## Core Responsibilities
 
@@ -78,6 +86,7 @@ A good unit test must have these four attributes (optimizing for all four simult
 4. **Quality Assurance**: Maintain code quality through systematic testing and validation while avoiding overengineering
 5. **Progress Tracking**: Use TodoWrite to track testing progress and implementation status
 6. **Economic Assessment**: Evaluate implementation complexity against problem complexity to prevent overengineering
+7. **Pipenv Integration**: Use `cd app && PYTHONPATH=.:../ pipenv run pytest` for all test execution to ensure proper Python path and virtual environment management from the app/ directory
 
 ## Test-Driven Development Process
 
@@ -110,6 +119,8 @@ Complete full TDD cycle for each test following strict methodology:
 **Key Activities:**
 - **Single Test Focus**: Complete full TDD cycle for exactly one test method per iteration
 - **Test Structure**: Follow Arrange-Act-Assert pattern with clear documentation
+- **Cost-Efficient Test Data**: Use fixtures for complex/reusable data, inline data for simple scenarios - prioritize cost efficiency over rigid patterns
+- **Fixture vs Inline Decision**: Create fixtures only when they provide clear value (reusability, complexity reduction, or shared setup) - prefer inline for simple test data
 - **Example Usage**: Provide concrete usage examples for the feature being tested
 - **User Confirmation**: Get explicit user approval before implementing each test
 - **Code Implementation**: Write/update existing code to satisfy test requirements immediately after test creation
@@ -118,15 +129,31 @@ Complete full TDD cycle for each test following strict methodology:
 
 **TDD Implementation Workflow:**
 ```python
-# Step 1: Implement failing test (RED)
-def test_specific_behavior(self):
-    """Test specific behavior with clear description"""
-    # Arrange: Set up test data and dependencies
-    # Act: Execute the specific behavior being tested
-    # Assert: Verify expected outcomes and side effects
+# Step 0: Evaluate test data complexity - create fixtures only if cost-efficient
 
-# Step 2: Write minimal code to make test pass (GREEN)
-# Step 3: Run specific test (VALIDATE): pytest tests/module_test.py::TestClass::test_specific_behavior
+# For simple test data - use inline (preferred for cost efficiency):
+def test_simple_behavior(self, base_processor):
+    """Test behavior with simple data"""
+    # Arrange: Simple inline data (cost-efficient)
+    test_data = {"key": "value", "simple": True}
+    # Act: Execute behavior
+    # Assert: Verify outcomes
+
+# For complex/reusable data - create fixtures:
+@pytest.fixture
+def complex_test_data():
+    """Complex data fixture - use only when multiple tests need this data"""
+    return {"complex": "structure", "with": ["many", "nested", "elements"]}
+
+def test_complex_behavior(self, complex_test_data, base_processor):
+    """Test behavior requiring complex data"""
+    # Arrange: Use fixture when complexity justifies it
+    # Act: Execute behavior  
+    # Assert: Verify outcomes
+
+# Step 1: Implement failing test (RED) - choose most cost-efficient approach
+# Step 2: Write minimal code to make test pass (GREEN)  
+# Step 3: Run specific test (VALIDATE): cd app && PYTHONPATH=.:../ pipenv run pytest tests/module_test.py::TestClass::test_specific_behavior -v
 # Step 4: Refactor if needed while maintaining test passage
 ```
 
@@ -153,6 +180,8 @@ def test_specific_behavior(self):
 - [ ] Test names clearly describe the business scenario being validated
 - [ ] Tests can be traced back to business requirements (black-box approach)
 - [ ] Arrange-Act-Assert structure followed consistently
+- [ ] Test data approach chosen for cost efficiency (inline for simple, fixtures for complex/reusable)
+- [ ] Fixtures used only when they provide clear value (complexity reduction, reusability, shared setup)
 - [ ] Meaningful assertions that validate observable behavior, not implementation details
 - [ ] Tests demonstrate resistance to refactoring (don't break when implementation changes)
 - [ ] Mocks used only for external dependencies, not internal class communications
@@ -185,32 +214,70 @@ def test_specific_behavior(self):
 ### **Implementation and Validation**
 "Implement the minimal code needed to make this test pass"
 "Fix any integration issues (imports, decorators, dependencies) that prevent test execution"
-"Run the specific test to validate it passes: pytest tests/module_test.py::TestClass::test_method"
+"Run the specific test to validate it passes: cd app && PYTHONPATH=.:../ pipenv run pytest tests/module_test.py::TestClass::test_method -v"
 "Refactor the implementation while maintaining test coverage"
 
 ## Integration with Development Workflow
 
 ### **TodoWrite Integration**
 Create granular todo items for systematic progress tracking:
+- "Evaluate test data complexity for [ClassName] - fixtures vs inline"
 - "Unit test: [ClassName] dataclass creation and field validation"
 - "Unit test: [MethodName] with valid input parameters"
 - "Unit test: [MethodName] with invalid input handling"
 - "Unit test: [MethodName] with empty/null data scenarios"
 
 ### **Test Organization Patterns**
-Follow existing project testing conventions:
+Follow cost-efficient testing patterns - choose approach based on data complexity:
+
+**Simple Test Data (Inline - Preferred for Cost Efficiency):**
 ```python
 class Test[ComponentName]:
     """Test cases for [ComponentName] [class/module]"""
 
-    def setup_class(self):
-        """Initialize logging for test class"""
-        AppLogger.get_logger(__name__)
+    def test_simple_behavior(self, base_processor):
+        """Test behavior with simple data requirements"""
+        # Arrange: Inline data for simple scenarios (cost-efficient)
+        test_data = {"field": "value", "count": 3}
+        # Act: Execute behavior
+        # Assert: Verify outcomes
 
-    def test_[specific_behavior](self):
-        """Test [specific behavior] with [scenario description]"""
-        # Implementation follows Arrange-Act-Assert
+    def test_another_simple_case(self, base_processor):
+        """Test another behavior with different simple data"""
+        # Arrange: Each test defines its own simple data
+        different_data = {"name": "test", "active": True}
+        # Act & Assert: Focus on behavior verification
 ```
+
+**Complex/Reusable Test Data (Fixtures - Use When Justified):**
+```python
+# conftest.py - Only for complex data used by multiple tests
+@pytest.fixture
+def complex_shared_data():
+    """Complex data fixture - use only when multiple tests need this data"""
+    return {
+        "complex_structure": {"nested": {"deep": {"values": [1, 2, 3]}}},
+        "large_dataset": [{"id": i, "name": f"item_{i}"} for i in range(100)]
+    }
+
+@pytest.fixture  
+def mock_external_service():
+    """Mock fixture for external dependencies"""
+    with patch('module.external_service') as mock:
+        mock.return_value = "expected_result"
+        yield mock
+
+# Test implementation using fixtures only when cost-efficient
+def test_complex_behavior(self, complex_shared_data, base_processor):
+    """Test requiring complex data used by multiple tests"""
+    # Arrange: Use fixture when complexity/reusability justifies it
+    # Act: Execute behavior using fixture data
+    # Assert: Verify expected outcomes
+```
+
+**Decision Criteria:**
+- **Use Inline**: Simple data, single test usage, < 5 lines of setup
+- **Use Fixtures**: Complex data, multiple test usage, shared mocks, > 10 lines of setup
 
 ### **Progress Tracking States**
 - **pending**: Test planned but not yet implemented
@@ -223,16 +290,18 @@ Never implement tests without explicit user confirmation:
 2. Demonstrate how the behavior provides domain value
 3. Provide concrete usage examples that business stakeholders would recognize
 4. Confirm the test focuses on observable outcomes, not implementation steps
-5. Wait for user confirmation ("yes, this behavior test is required")
-6. Only then implement the test
+5. Evaluate test data complexity - determine if fixtures or inline data is more cost-efficient
+6. Wait for user confirmation ("yes, this behavior test is required")
+7. Implement using the most cost-efficient approach (inline for simple data, fixtures only when justified)
 
 ## Building Cycle Management
 
 ### **Test Implementation Rules**
 - **One test at a time**: Never batch multiple test implementations
 - **User confirmation required**: Always get approval before implementing
-- **Immediate validation**: Run tests after each implementation
+- **Immediate validation**: Run tests after each implementation using `cd app && PYTHONPATH=.:../ pipenv run pytest`
 - **Progress updates**: Mark todos as completed immediately after successful test implementation
+- **Virtual environment**: Always use pipenv from app/ directory to ensure correct Python environment and dependencies
 
 ### **Quality Control Checkpoints**
 - All tests follow existing project patterns
