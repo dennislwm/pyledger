@@ -1,6 +1,6 @@
 include .env
 
-.PHONY: default aider aider_dryrun install_new install_test llm pre-commit run shell shell_clean test test_verbose
+.PHONY: default aider aider_dryrun install_new install_test llm pre-commit run shell shell_clean test test_verbose run_dbs run_hsbc run_uob_bg run_uob_dl run_uob_family
 SHELL := /bin/bash
 
 default: test
@@ -23,7 +23,7 @@ pre-commit:
 	@pre-commit run --all-files
 
 run:
-	python ledger.py
+	pipenv run python ledger.py
 
 shell:
 	pipenv shell
@@ -32,7 +32,23 @@ shell_clean:
 	pipenv --rm
 
 test:
-	PYTHONPATH=.:../ pytest
+	PYTHONPATH=.:../ pipenv run pytest
 
 test_verbose:
-	PYTHONPATH=.:../ pytest -v -s
+	PYTHONPATH=.:../ pipenv run pytest -v -s
+
+# Bank-specific ledger processing targets
+run_dbs:
+	pipenv run python ledger.py ../input/dbs.csv ../rules/rules_dbs.yaml
+
+run_hsbc:
+	pipenv run python ledger.py ../input/hsbc.csv ../rules/rules_hsbc.yaml
+
+run_uob_bg:
+	pipenv run python ledger.py ../input/uob_bg.xls ../rules/rules_uob_bg.yaml
+
+run_uob_dl:
+	pipenv run python ledger.py ../input/uob_dl.xls ../rules/rules_uob_dl.yaml
+
+run_uob_family:
+	pipenv run python ledger.py ../input/uob_family.xls ../rules/rules_uob_family.yaml
