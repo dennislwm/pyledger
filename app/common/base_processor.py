@@ -6,6 +6,7 @@ import re
 import json
 import yaml
 import copy
+import pandas as pd
 DEFAULT_HEADERS = {
   "date": "Date",
   "description": "Description",
@@ -90,6 +91,9 @@ class BaseProcessor(ABC):
     Returns:
       any: The DataFrame sorted by date.
     """
+    # Filter out rows with null dates in the configured date column
+    transactions_df = transactions_df[transactions_df[headers["date"]].notna()]
+    
     transactions_df["sort"] = transactions_df[headers["date"]].apply(
       dateutil.parser.parse
     )
@@ -114,6 +118,19 @@ class BaseProcessor(ABC):
         lambda x: float(x.replace(",", "")) if (float(x.replace(",", "")) > 0) else 0
       )
     else:
+      # Convert string amounts to float, handling empty/space values
+      def safe_float_convert(x):
+        if pd.isna(x) or str(x).strip() == '':
+          return 0.0
+        try:
+          return float(str(x).replace(",", "").strip())
+        except (ValueError, TypeError):
+          return 0.0
+      
+      transactions_df[headers["withdraw"]] = transactions_df[headers["withdraw"]].apply(safe_float_convert)
+      transactions_df[headers["deposit"]] = transactions_df[headers["deposit"]].apply(safe_float_convert)
+      
+      # Negate withdraw amounts to make them negative
       transactions_df[headers["withdraw"]] = -transactions_df[headers["withdraw"]]
     transactions_df[headers["amount"]] = (
       transactions_df[headers["deposit"]] + transactions_df[headers["withdraw"]]
@@ -142,6 +159,10 @@ class BaseProcessor(ABC):
       date = dateutil.parser.parse(row[headers["date"]])
       formatted_date = date.strftime("%Y/%m/%d")
       description = row[headers["description"]]
+      # Handle NaN description values
+      if pd.isna(description):
+        description = ""
+      
       amount_str = str(row[headers["amount"]])
       # Remove commas from the amount string and convert to float
       amount = float(amount_str.replace(",", ""))
@@ -151,8 +172,12 @@ class BaseProcessor(ABC):
       if rule:
         debit_account = rule["debit_account"]
         credit_account = rule["credit_account"]
+        # Ensure description is a string for regex processing
+        desc_for_output = rule.get("description", description)
+        if pd.isna(desc_for_output):
+          desc_for_output = ""
         output_description = (
-          re.sub(r"[^a-zA-Z0-9 ]+", " ", rule.get("description", description))
+          re.sub(r"[^a-zA-Z0-9 ]+", " ", str(desc_for_output))
           .title()
           .replace("\n", " ")
         )
@@ -171,10 +196,14 @@ class BaseProcessor(ABC):
     Returns:
       dict or None: The matching rule if found, otherwise None.
     """
+    # Handle null/NaN transaction type values
+    if pd.isna(transaction_type):
+      transaction_type = ""
+    
     for rule in rules:
       # if fnmatch.fnmatch(transaction_type.lower(), rule['transaction_type'].lower()):
       regex = fnmatch.translate(rule["transaction_type"].lower())
-      if re.search(regex, transaction_type.lower()) is not None:
+      if re.search(regex, str(transaction_type).lower()) is not None:
         return rule
     return None
 

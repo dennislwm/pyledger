@@ -31,7 +31,16 @@ class CsvProcessor(BaseProcessor, ABC):
       pd.DataFrame: A DataFrame containing the data from the CSV file.
     """
     try:
-      ret = pd.read_csv(file_path)
+      # Check if rules specify a start_row for CSV processing
+      csv_config = self.rules.get('input', {}).get('csv', {})
+      start_row = csv_config.get('start_row', 0)
+      
+      if start_row > 0:
+        # Skip rows as specified in rules file
+        ret = pd.read_csv(file_path, skiprows=start_row, index_col=False)
+      else:
+        # Standard CSV format: read normally
+        ret = pd.read_csv(file_path, index_col=False)
     except pd.errors.EmptyDataError:
       raise pd.errors.EmptyDataError
     return ret
