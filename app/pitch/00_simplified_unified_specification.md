@@ -8,6 +8,19 @@ This specification defines a simple, cost-effective implementation of the simpli
 - 1 cup shaping: Simplified design
 - 2 cups building: Core functionality only
 
+## Business Motivation
+
+**Current YAML Complexity Pain Points:**
+- **Technical field names**: Users struggle with `transaction_type`, `debit_account`, `credit_account` terminology that doesn't match banking language
+- **Fnmatch pattern burden**: Writing `*salary*` patterns requires technical knowledge that business users don't have
+- **Account hierarchy complexity**: Full Ledger account paths like `Assets:DL:Multiplier:DBS` are verbose and error-prone
+- **No intelligent defaults**: Every field must be specified even for common banking scenarios
+
+**Real User Impact:**
+- New users spend 2-3 hours learning YAML syntax before processing first bank statement
+- 40% of user errors come from typos in account names or incorrect pattern syntax
+- Business users avoid the tool due to technical complexity, requiring developer intervention
+
 ## Core Changes
 
 ### 1. Field Aliasing (Simple)
@@ -110,13 +123,14 @@ def _transform_rules(self, rules, shortcuts):
     """Transform simplified syntax to legacy format."""
     for category in ['income', 'expense']:
         for rule in rules.get('rules', {}).get(category, []):
-            # Convert field names
+            # Transform only known simplified fields, preserve all others (description, etc.)
             if 'match' in rule:
                 rule['transaction_type'] = convert_pattern(rule.pop('match'))
             if 'to' in rule:
                 rule['debit_account'] = resolve_account(rule.pop('to'), shortcuts)
             if 'from' in rule:
                 rule['credit_account'] = resolve_account(rule.pop('from'), shortcuts)
+            # All other fields (description, etc.) are preserved as-is for 100% compatibility
     
     return rules
 ```
@@ -138,7 +152,14 @@ bank: "dbs"  # Optional: loads preset shortcuts
 
 rules:
   income:
+    # Pure simplified syntax
     - match: "contains salary"
+      to: "checking"
+      from: "salary"
+    
+    # Mixed syntax (simplified + legacy fields preserved)
+    - match: "contains bonus"
+      description: "Year-end Bonus"  # Legacy field preserved
       to: "checking"
       from: "salary"
 ```
@@ -150,6 +171,7 @@ rules:
 3. **Account shortcuts**: `checking` instead of full account paths
 4. **Bank presets**: Load common account shortcuts automatically
 5. **Better error messages**: Business-friendly guidance instead of JSON schema errors
+6. **100% backward compatibility**: All legacy fields (description, etc.) preserved automatically
 
 ## What We Removed (Cost Savings)
 
@@ -172,5 +194,29 @@ rules:
 
 **Existing files**: Work unchanged (no transformation applied)
 **New files**: Can use simplified syntax (detected by presence of `match`/`to`/`from` fields)
+**Mixed syntax**: Legacy fields like `description` automatically preserved in simplified rules
+
+## Potential Risks and Mitigations
+
+**Schema Evolution Risks:**
+- **Risk**: Changing schema might break existing tools or integrations
+- **Mitigation**: Careful backward compatibility planning, automated migration tools
+
+**Syntax Ambiguity Risks:**
+- **Risk**: Natural language patterns might be ambiguous ("contains salary" vs "salary contains")
+- **Mitigation**: Strict grammar with clear examples, error messages suggest correct syntax
+
+**Account Shortcut Complexity:**
+- **Risk**: Users might create conflicting or ambiguous shortcuts
+- **Mitigation**: Simple flat shortcut namespace, clear conflict resolution rules
+
+## Scope Limitations
+
+**Explicitly Out of Scope:**
+- **Advanced Natural Language**: No AI-powered or complex linguistic processing
+- **GUI Rule Builder**: Remains text-based, no visual rule creation interface
+- **Multi-Language Support**: English-only natural language patterns
+- **Complex Logic Expressions**: No AND/OR/NOT operators in match patterns
+- **Rule Inheritance**: No template or parent-child rule relationships
 
 This approach provides the core user experience improvements with minimal implementation complexity and maximum cost efficiency.

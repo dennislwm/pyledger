@@ -1,6 +1,6 @@
 include .env
 
-.PHONY: default aider aider_dryrun install_new install_test llm pre-commit run shell shell_clean test test_verbose test_coverage run_dbs run_hsbc run_uob_bg run_uob_dl run_uob_family
+.PHONY: default aider aider_dryrun install_new install_test llm pre-commit run shell shell_clean test test_verbose test_coverage run_dbs run_hsbc run_uob_bg run_uob_dl run_uob_family run_dbs_simple run_hsbc_simple
 SHELL := /bin/bash
 
 default: test
@@ -55,3 +55,10 @@ run_uob_dl:
 
 run_uob_family:
 	pipenv run python ledger.py ../input/uob_family.xls ../rules/rules_uob_family.yaml
+
+# Simplified syntax targets with bank presets
+run_dbs_simple:
+	pipenv run python ledger.py ../input/dbs.csv ../rules/rules_dbs_simplified.yaml
+
+run_hsbc_simple:
+	pipenv run python ledger.py ../input/hsbc.csv ../rules/rules_hsbc_simplified.yaml

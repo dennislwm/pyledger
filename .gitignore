@@ -1,6 +1,7 @@
 # Custom
 .aider*
 .DS_Store
+presets/
 input/
 rules/
 

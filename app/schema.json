@@ -4,6 +4,15 @@
   "required": [ "rules" ],
   "additionalProperties": false,
   "properties": {
+    "bank": {
+      "type": "string"
+    },
+    "accounts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
     "input": {
       "type": "object",
       "additionalProperties": false,
