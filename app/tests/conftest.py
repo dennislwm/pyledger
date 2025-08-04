@@ -23,6 +23,10 @@ input:
   xls:
     header:
       date: " Transaction Date"
+output:
+  path: "output.txt"
+  amount:
+    prefix: "$"
 rules:
   income:
     - transaction_type: "TRANSFER RENT PAYMENT Wyndham Realty"
