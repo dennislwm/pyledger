@@ -177,7 +177,14 @@ class BaseProcessor(ABC):
       rule = self.match_rule(description, applicable_rules)
 
       # Calculate confidence and rule type for metadata
-      confidence_score, matched_rule_type = self._calculate_confidence(rule)
+      confidence_score, matched_rule_type = self._calculate_confidence(rule, description)
+
+      # Calculate rule key for tracking (before metadata creation)
+      if rule:
+        rule_type = "income" if amount > 0 else "expense"
+        rule_key = rule_type + "." + rule.get("transaction_type", "no_match")
+      else:
+        rule_key = "no_match"
 
       # Track metadata if requested (for ALL transactions)
       if capture_metadata:
@@ -187,14 +194,11 @@ class BaseProcessor(ABC):
           "date": formatted_date,
           "confidence_score": confidence_score,
           "matched_rule_type": matched_rule_type,
-          "rule_matched": rule is not None
+          "rule_matched": rule is not None,
+          "matched_rule_key": rule_key if rule else None
         }
         transaction_metadata.append(tx_metadata)
-
-        # Update rule usage statistics
-        rule_key = rule.get("transaction_type", "no_match") if rule else "no_match"
         rule_usage[rule_key] = rule_usage.get(rule_key, 0) + 1
-
         # Update confidence distribution
         if confidence_score >= 0.9:
           confidence_distribution["high"] += 1
@@ -222,23 +226,139 @@ class BaseProcessor(ABC):
 
     # Return appropriate format based on capture_metadata flag
     if capture_metadata:
+      # Generate comprehensive rule analytics
+      rule_analytics = self._generate_rule_analytics(rules, rule_usage, transaction_metadata)
+      
       metadata = {
         "transactions": transaction_metadata,
         "summary": {
           "total_transactions": len(transaction_metadata),
           "rule_usage": rule_usage,
           "confidence_distribution": confidence_distribution
-        }
+        },
+        "rule_analytics": rule_analytics
       }
       return (output, metadata)
     else:
       return output
 
-  def _calculate_confidence(self, rule):
-    """Calculate confidence score based on rule match."""
+  def _generate_rule_analytics(self, rules, rule_usage, transaction_metadata):
+    """Generate comprehensive rule analytics for dashboard insights."""
+    # Single-pass calculation combining all metrics
+    all_rules = [f"{rt}.{r['transaction_type']}" 
+                 for rt in ["income", "expense"] 
+                 for r in rules["rules"].get(rt, [])]
+    
+    # Single pass through transactions for all metrics
+    rule_metrics = {}
+    transactions_with_rules = 0
+    
+    for tx in transaction_metadata:
+      if tx.get("rule_matched"):
+        transactions_with_rules += 1
+      
+      rule_key = tx.get("matched_rule_key")
+      if rule_key and rule_key != "no_match":
+        if rule_key not in rule_metrics:
+          rule_metrics[rule_key] = {"sum": 0, "count": 0}
+        rule_metrics[rule_key]["sum"] += tx["confidence_score"]
+        rule_metrics[rule_key]["count"] += 1
+    
+    # Build effectiveness and analytics
+    rule_effectiveness = {k: {"avg_confidence": round(v["sum"]/v["count"], 1), 
+                             "usage_count": v["count"]} 
+                         for k, v in rule_metrics.items()}
+    
+    used_rules = set(rule_usage.keys()) - {"no_match"}
+    unused_rules = [rule for rule in all_rules if rule not in used_rules]
+    total_rules = len(all_rules)
+    
+    return {
+      "rule_usage": rule_usage,
+      "unused_rules": unused_rules,
+      "rule_effectiveness": rule_effectiveness,
+      "coverage_analysis": {
+        "total_rules_defined": total_rules,
+        "rules_used": len(used_rules),
+        "rules_unused": len(unused_rules),
+        "usage_percentage": round(len(used_rules) / total_rules * 100, 2) if total_rules > 0 else 0,
+        "total_transactions": len(transaction_metadata),
+        "transactions_with_rules": transactions_with_rules,
+        "transactions_without_rules": len(transaction_metadata) - transactions_with_rules
+      },
+      "insights": {
+        "configuration_cleanup": {"removable_rules": unused_rules},
+        "rule_quality": {
+          "high_performing_rules": [r for r, d in rule_effectiveness.items() if d["avg_confidence"] >= 0.8],
+          "low_performing_rules": [r for r, d in rule_effectiveness.items() if d["avg_confidence"] < 0.5]
+        }
+      }
+    }
+  def _calculate_confidence(self, rule, description=""):
+    """Calculate confidence score based on rule match and description clarity.
+    
+    Args:
+        rule: The matched rule or None if no match
+        description: The transaction description for clarity analysis
+        
+    Returns:
+        tuple(float, str): (confidence_score, rule_type)
+        
+    Confidence scoring:
+        - No rule match: 0.1 (lowest)
+        - Cryptic description + wildcard rule: 0.3 (lower)
+        - Clear description + wildcard rule: 0.5 (medium)
+        - Cryptic description + specific rule: 0.7 (reduced)
+        - Clear description + specific rule: 0.9 (highest)
+    """
     if not rule:
-      return 0.1, "none"
-    return (0.5, "wildcard") if "*" in rule.get("transaction_type", "") else (0.9, "specific")
+        return 0.1, "none"
+    
+    # Determine rule specificity
+    is_wildcard = "*" in rule.get("transaction_type", "")
+    rule_type = "wildcard" if is_wildcard else "specific"
+    
+    # Calculate description clarity score (0.0 = cryptic, 1.0 = clear)
+    clarity_score = self._assess_description_clarity(description)
+    
+    # Base confidence scores
+    if is_wildcard:
+        base_confidence = 0.5  # Wildcard rule base
+        # Adjust for description clarity: 0.3 (cryptic) to 0.5 (clear)
+        confidence = 0.3 + (clarity_score * 0.2)
+    else:
+        base_confidence = 0.9  # Specific rule base
+        # Adjust for description clarity: 0.7 (cryptic) to 0.9 (clear) 
+        confidence = 0.7 + (clarity_score * 0.2)
+    
+    return round(confidence, 1), rule_type
+
+
+  def _assess_description_clarity(self, description):
+    """Assess description clarity using simplified heuristics."""
+    if not description or not str(description).strip():
+        return 0.0
+    
+    desc_upper = str(description).upper()
+    words = description.split()
+    
+    # Quick business context check
+    business_terms = ['SALARY', 'GROCERY', 'RENT', 'PAYMENT', 'STORE', 'PURCHASE']
+    has_business_context = any(term in desc_upper for term in business_terms)
+    
+    # Quick cryptic pattern check  
+    cryptic_patterns = ['POS', 'TXN', 'REF', 'CODE']
+    has_cryptic_patterns = any(pattern in desc_upper for pattern in cryptic_patterns)
+    
+    # Quick length/complexity heuristic
+    avg_word_length = sum(len(w) for w in words) / len(words) if words else 0
+    
+    if has_business_context and avg_word_length >= 4:
+        return 1.0  # Clear
+    elif has_cryptic_patterns or avg_word_length <= 3:
+        return 0.0  # Cryptic
+    else:
+        return 0.5  # Neutral
 
   def match_rule(self, transaction_type, rules):
     """Match a transaction type against defined rules to find applicable processing rule.
