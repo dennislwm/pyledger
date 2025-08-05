@@ -430,3 +430,120 @@ def test_rule_analytics_tracks_usage_and_effectiveness(csv_processor, sample_rul
     # - Configuration management (unused rule cleanup)
     # - Rule quality improvement (low confidence rule identification)
     # - Usage pattern optimization (frequently used rule performance)
+
+
+def test_markdown_dashboard_generation_with_confidence_based_groupings(csv_processor, sample_rules):
+    """Test markdown dashboard generation with confidence-based transaction groupings and analytics.
+    
+    Business Behavior: Markdown dashboard organizes transactions by confidence levels with clear
+    section headers and summary analytics for efficient review workflow prioritization.
+    """
+    # Arrange: Create test rules with varying specificity for realistic confidence distribution
+    test_rules = build_test_rules(
+        sample_rules,
+        income=[
+            ("SALARY PAYMENT COMPANY", ACCOUNTS['salary']),    # Specific rule for high confidence
+            ("*PAYMENT*", ACCOUNTS['other_income'])            # Wildcard rule for medium confidence
+        ],
+        expense=[
+            ("*GROCERY*", ACCOUNTS['groceries']),  # Wildcard rule for medium confidence
+            ("*MISC*", ACCOUNTS['general_expense']) # Wildcard rule for medium confidence
+        ]
+    )
+    
+    # Test realistic transaction scenarios with mixed confidence levels
+    data = {
+        "Transaction Date": ["2024-07-19", "2024-07-20", "2024-07-21"],
+        "Description": [
+            "SALARY PAYMENT COMPANY",           # High confidence: specific rule + clear description
+            "GROCERY STORE PURCHASE",          # Medium confidence: wildcard rule + clear description  
+            "CRYPTIC CODE XYZ123"              # Low confidence: no rule match + cryptic description
+        ],
+        "Amount": ["2500.00", "-125.50", "-25.00"],
+    }
+    transactions_df = pd.DataFrame(data)
+
+    # Act: Process transactions to generate metadata for markdown dashboard
+    result = csv_processor.transform_transactions(
+        transactions_df, test_rules, csv_processor.headers, capture_metadata=True
+    )
+    
+    # Assert: Verify tuple return structure for metadata extraction
+    assert isinstance(result, tuple), "Expected tuple (output, metadata) when capture_metadata=True"
+    output, metadata = result
+    
+    # Verify metadata contains transactions with confidence scores for dashboard
+    assert "transactions" in metadata, "Metadata should contain transactions for dashboard"
+    transaction_metadata = metadata["transactions"]
+    assert len(transaction_metadata) == 3, "Should have metadata for all 3 input transactions"
+    
+    # Verify confidence levels for realistic grouping scenarios
+    high_conf_tx = transaction_metadata[0]  # SALARY PAYMENT COMPANY
+    medium_conf_tx = transaction_metadata[1]  # GROCERY STORE PURCHASE
+    low_conf_tx = transaction_metadata[2]  # CRYPTIC CODE XYZ123
+    
+    assert high_conf_tx["confidence_score"] >= 0.9, "Salary should have high confidence"
+    assert 0.4 <= medium_conf_tx["confidence_score"] < 0.9, "Grocery should have medium confidence"
+    assert low_conf_tx["confidence_score"] < 0.4, "Cryptic transaction should have low confidence"
+    
+    # Act: Generate markdown dashboard
+    markdown_output = csv_processor.generate_markdown_dashboard(metadata)
+    
+    # Assert: Validate markdown structure and content organization
+    assert isinstance(markdown_output, str), "Markdown dashboard should return string"
+    assert len(markdown_output) > 0, "Markdown output should not be empty"
+    
+    # Verify markdown document structure
+    assert "# Transaction Review Dashboard" in markdown_output, "Should have main title"
+    assert "## Summary" in markdown_output, "Should have summary section"
+    assert "## 🟢 High Confidence Transactions" in markdown_output, "Should have high confidence section"
+    assert "## 🟡 Medium Confidence Transactions" in markdown_output, "Should have medium confidence section"
+    assert "## 🔴 Low Confidence Transactions" in markdown_output, "Should have low confidence section"
+    assert "## Rule Analytics" in markdown_output, "Should have rule analytics section"
+    
+    # Verify summary metrics
+    assert "**Total Transactions**: 3" in markdown_output, "Should display total transaction count"
+    assert "**Average Confidence**:" in markdown_output, "Should display average confidence score"
+    assert "**High Confidence**: 1 transactions" in markdown_output, "Should count high confidence transactions"
+    assert "**Medium Confidence**: 1 transactions" in markdown_output, "Should count medium confidence transactions"
+    assert "**Low Confidence**: 1 transactions" in markdown_output, "Should count low confidence transactions"
+    
+    # Verify transaction content appears in correct confidence sections
+    assert "**SALARY PAYMENT COMPANY**" in markdown_output, "Should display salary transaction"
+    assert "$2500.00" in markdown_output, "Should display salary amount"
+    assert "**GROCERY STORE PURCHASE**" in markdown_output, "Should display grocery transaction"
+    assert "$125.50" in markdown_output, "Should display grocery amount"
+    assert "**CRYPTIC CODE XYZ123**" in markdown_output, "Should display cryptic transaction"
+    assert "$25.00" in markdown_output, "Should display cryptic amount"
+    
+    # Verify confidence scores are displayed
+    assert "Confidence: 0.9" in markdown_output, "Should display high confidence score"
+    assert "Confidence: 0.5" in markdown_output, "Should display medium confidence score"
+    assert "Confidence: 0.1" in markdown_output, "Should display low confidence score"
+    
+    # Verify rule analytics content
+    assert "**Rule Usage**:" in markdown_output, "Should display rule usage percentage"
+    assert "**Transactions Matched**:" in markdown_output, "Should display transaction match ratio"
+    
+    # Verify efficient markdown format (no HTML bloat)
+    assert "<html>" not in markdown_output, "Should not contain HTML tags"
+    assert "<div>" not in markdown_output, "Should not contain HTML div elements"
+    assert "<style>" not in markdown_output, "Should not contain CSS styling"
+    assert "<!DOCTYPE" not in markdown_output, "Should not contain HTML doctype"
+    
+    # Verify concise structure with meaningful headers and bullet points
+    assert markdown_output.count("##") >= 4, "Should have multiple section headers"
+    assert markdown_output.count("- **") >= 8, "Should have bullet points for content organization"
+    
+    # Verify business value: Organized transaction review workflow
+    # Token efficiency: Markdown format reduces verbose HTML/CSS overhead
+    # Maintains all confidence-based grouping for review prioritization
+    lines = markdown_output.split('\n')
+    content_lines = [line for line in lines if line.strip()]
+    assert len(content_lines) <= 25, "Should be concise with focused content"
+    
+    # Business Value Verification: Dashboard organizes transactions by confidence for efficient review
+    # - High confidence (🟢): Quick approval, minimal review needed
+    # - Medium confidence (🟡): Standard review process  
+    # - Low confidence (🔴): Detailed manual review required
+    # - Analytics section: Rule usage insights for configuration optimization

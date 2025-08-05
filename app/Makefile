@@ -1,6 +1,6 @@
 include .env
 
-.PHONY: default aider aider_dryrun install_new install_test llm pre-commit run shell shell_clean test test_verbose test_coverage run_dbs run_hsbc run_uob_bg run_uob_dl run_uob_family run_dbs_simple run_hsbc_simple
+.PHONY: default aider aider_dryrun install_new install_test llm pre-commit run shell shell_clean test test_verbose test_coverage run_dbs run_hsbc run_uob_bg run_uob_dl run_uob_family run_dbs_simple run_hsbc_simple review_dbs review_hsbc review_uob_bg review_uob_dl review_uob_family review_dbs_simple review_hsbc_simple
 SHELL := /bin/bash
 
 default: test
@@ -62,3 +62,26 @@ run_dbs_simple:
 
 run_hsbc_simple:
 	pipenv run python ledger.py ../input/hsbc.csv ../rules/rules_hsbc_simplified.yaml
+
+# Transaction review dashboard targets (cycle 3 features)
+review_dbs:
+	pipenv run python ledger.py ../input/dbs.csv ../rules/rules_dbs.yaml --review
+
+review_hsbc:
+	pipenv run python ledger.py ../input/hsbc.csv ../rules/rules_hsbc.yaml --review
+
+review_uob_bg:
+	pipenv run python ledger.py ../input/uob_bg.xls ../rules/rules_uob_bg.yaml --review
+
+review_uob_dl:
+	pipenv run python ledger.py ../input/uob_dl.xls ../rules/rules_uob_dl.yaml --review
+
+review_uob_family:
+	pipenv run python ledger.py ../input/uob_family.xls ../rules/rules_uob_family.yaml --review
+
+# Review dashboard with simplified syntax
+review_dbs_simple:
+	pipenv run python ledger.py ../input/dbs.csv ../rules/rules_dbs_simplified.yaml --review
+
+review_hsbc_simple:
+	pipenv run python ledger.py ../input/hsbc.csv ../rules/rules_hsbc_simplified.yaml --review

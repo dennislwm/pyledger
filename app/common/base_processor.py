@@ -492,3 +492,77 @@ class BaseProcessor(ABC):
         return preset.get('accounts', {}) if preset else {}
     except (FileNotFoundError, yaml.YAMLError):
       return {}  # Graceful degradation
+
+  def generate_markdown_dashboard(self, metadata):
+    """Generate markdown dashboard with confidence-based transaction groupings.
+    
+    Args:
+        metadata (dict): Transaction metadata with confidence scores and transaction data.
+        
+    Returns:
+        str: Complete markdown document with confidence-based sections and rule analytics.
+    """
+    if not metadata or "transactions" not in metadata:
+        return ""
+    
+    transactions = metadata["transactions"]
+    summary = metadata.get("summary", {})
+    rule_analytics = metadata.get("rule_analytics", {})
+    
+    # Group transactions by confidence level
+    high_confidence = [tx for tx in transactions if tx.get("confidence_score", 0) >= 0.9]
+    medium_confidence = [tx for tx in transactions if 0.4 <= tx.get("confidence_score", 0) < 0.9]
+    low_confidence = [tx for tx in transactions if tx.get("confidence_score", 0) < 0.4]
+    
+    # Calculate summary metrics
+    total_transactions = len(transactions)
+    avg_confidence = sum(tx["confidence_score"] for tx in transactions) / total_transactions if total_transactions > 0 else 0
+    
+    # Generate markdown content
+    md_content = "# Transaction Review Dashboard\n\n"
+    
+    # Summary metrics section
+    md_content += "## Summary\n"
+    md_content += f"- **Total Transactions**: {total_transactions}\n"
+    md_content += f"- **Average Confidence**: {avg_confidence:.1f}\n"
+    md_content += f"- **High Confidence**: {len(high_confidence)} transactions\n"
+    md_content += f"- **Medium Confidence**: {len(medium_confidence)} transactions\n"
+    md_content += f"- **Low Confidence**: {len(low_confidence)} transactions\n\n"
+    
+    # High confidence transactions
+    if high_confidence:
+        md_content += "## 🟢 High Confidence Transactions\n"
+        for tx in high_confidence:
+            amount_str = f"${abs(tx['amount']):.2f}"
+            md_content += f"- **{tx['description']}** | {amount_str} | {tx['date']} | Confidence: {tx['confidence_score']}\n"
+        md_content += "\n"
+    
+    # Medium confidence transactions  
+    if medium_confidence:
+        md_content += "## 🟡 Medium Confidence Transactions\n"
+        for tx in medium_confidence:
+            amount_str = f"${abs(tx['amount']):.2f}"
+            md_content += f"- **{tx['description']}** | {amount_str} | {tx['date']} | Confidence: {tx['confidence_score']}\n"
+        md_content += "\n"
+    
+    # Low confidence transactions
+    if low_confidence:
+        md_content += "## 🔴 Low Confidence Transactions\n"
+        for tx in low_confidence:
+            amount_str = f"${abs(tx['amount']):.2f}"
+            md_content += f"- **{tx['description']}** | {amount_str} | {tx['date']} | Confidence: {tx['confidence_score']}\n"
+        md_content += "\n"
+    
+    # Rule analytics section
+    if rule_analytics:
+        coverage = rule_analytics.get("coverage_analysis", {})
+        unused_rules = rule_analytics.get("unused_rules", [])
+        
+        md_content += "## Rule Analytics\n"
+        md_content += f"- **Rule Usage**: {coverage.get('usage_percentage', 0):.0f}% ({coverage.get('rules_used', 0)}/{coverage.get('total_rules_defined', 0)})\n"
+        md_content += f"- **Transactions Matched**: {coverage.get('transactions_with_rules', 0)}/{coverage.get('total_transactions', 0)}\n"
+        
+        if unused_rules:
+            md_content += f"- **Unused Rules**: {len(unused_rules)} rules can be removed\n"
+    
+    return md_content

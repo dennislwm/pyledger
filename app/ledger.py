@@ -10,7 +10,7 @@ app = typer.Typer()
 def main(
   input_file: Path = typer.Argument(..., help="Path to the input CSV or XLSX file"),
   rules_file: Path = typer.Argument(..., help="Path to the rules YAML file"),
-  review: bool = typer.Option(False, "--review", help="Generate HTML review dashboard"),
+  review: bool = typer.Option(False, "--review", help="Generate markdown review dashboard"),
 ):
   # Initialize processor (shared for both review and normal modes)
   if input_file.suffix == ".csv":
@@ -30,8 +30,15 @@ def main(
     # GREEN phase: Integration with metadata capture
     output, metadata = processor.transform_transactions(transactions_df, rules, headers, capture_metadata=True)
     
+    # Generate markdown dashboard
+    markdown_content = processor.generate_markdown_dashboard(metadata)
+    markdown_filename = input_file.stem + "_review_dashboard.md"
+    with open(markdown_filename, "w") as file:
+      file.write(markdown_content)
+    
     # Display Transaction Review Dashboard with metadata
     typer.echo("Transaction Review Dashboard")
+    typer.echo(f"Markdown dashboard saved to: {markdown_filename}")
     
     # Display confidence analysis
     summary = metadata["summary"]
