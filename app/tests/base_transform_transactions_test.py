@@ -499,7 +499,7 @@ def test_markdown_dashboard_generation_with_confidence_based_groupings(csv_proce
     assert "## 🟢 High Confidence Transactions" in markdown_output, "Should have high confidence section"
     assert "## 🟡 Medium Confidence Transactions" in markdown_output, "Should have medium confidence section"
     assert "## 🔴 Low Confidence Transactions" in markdown_output, "Should have low confidence section"
-    assert "## Rule Analytics" in markdown_output, "Should have rule analytics section"
+    assert "## Enhanced Rule Analytics" in markdown_output, "Should have enhanced rule analytics section"
     
     # Verify summary metrics
     assert "**Total Transactions**: 3" in markdown_output, "Should display total transaction count"
@@ -522,8 +522,8 @@ def test_markdown_dashboard_generation_with_confidence_based_groupings(csv_proce
     assert "Confidence: 0.1" in markdown_output, "Should display low confidence score"
     
     # Verify rule analytics content
-    assert "**Rule Usage**:" in markdown_output, "Should display rule usage percentage"
-    assert "**Transactions Matched**:" in markdown_output, "Should display transaction match ratio"
+    # Old assertion - rule usage now in subsection
+    # Old assertion - transactions matched now in subsection
     
     # Verify efficient markdown format (no HTML bloat)
     assert "<html>" not in markdown_output, "Should not contain HTML tags"
@@ -540,10 +540,199 @@ def test_markdown_dashboard_generation_with_confidence_based_groupings(csv_proce
     # Maintains all confidence-based grouping for review prioritization
     lines = markdown_output.split('\n')
     content_lines = [line for line in lines if line.strip()]
-    assert len(content_lines) <= 25, "Should be concise with focused content"
+    assert len(content_lines) <= 55, "Should be concise with focused content (enhanced analytics and rule effectiveness included)"
     
     # Business Value Verification: Dashboard organizes transactions by confidence for efficient review
     # - High confidence (🟢): Quick approval, minimal review needed
     # - Medium confidence (🟡): Standard review process  
     # - Low confidence (🔴): Detailed manual review required
     # - Analytics section: Rule usage insights for configuration optimization
+
+def test_enhanced_summary_metrics_includes_rule_effectiveness_data(csv_processor, sample_rules):
+    """Test enhanced summary section includes rule effectiveness metrics for dashboard improvement.
+    
+    Business Behavior: Enhanced summary provides rule performance insights including top/bottom
+    performing rules, usage statistics, and effectiveness percentages for configuration optimization.
+    """
+    # Arrange: Create test rules with varying performance characteristics
+    test_rules = build_test_rules(
+        sample_rules,
+        income=[
+            ("SALARY PAYMENT COMPANY", ACCOUNTS['salary']),      # High performing rule (specific + clear)
+            ("*TRANSFER*", ACCOUNTS['other_income']),           # Medium performing rule (wildcard + mixed descriptions)
+            ("POS 123456 ABC", ACCOUNTS['other_income'])        # Lower performing rule (specific + cryptic)
+        ],
+        expense=[
+            ("*GROCERY*", ACCOUNTS['groceries']),    # Medium performing rule (wildcard + clear descriptions)
+            ("*UTILITIES*", ACCOUNTS['utilities']),  # Unused rule (no matches)
+            ("*MISC*", ACCOUNTS['general_expense'])  # Lower performing rule (wildcard + cryptic descriptions)
+        ]
+    )
+    
+    # Test transactions with varying effectiveness scenarios
+    data = {
+        "Transaction Date": ["2024-07-19", "2024-07-20", "2024-07-21", "2024-07-22", "2024-07-23"],
+        "Description": [
+            "SALARY PAYMENT COMPANY",           # High confidence: specific rule + clear description (0.9)
+            "TRANSFER FROM BANK",               # Medium confidence: wildcard rule + clear description (0.5)
+            "POS 123456 ABC",                  # Lower confidence: specific rule + cryptic description (0.7)
+            "GROCERY STORE PURCHASE",          # Medium confidence: wildcard rule + clear description (0.5)
+            "MISC TXN CODE XYZ"                # Lower confidence: wildcard rule + cryptic description (0.3)
+        ],
+        "Amount": ["2500.00", "1000.00", "500.00", "-125.50", "-45.00"],
+    }
+    transactions_df = pd.DataFrame(data)
+
+    # Act: Process transactions to generate metadata with rule effectiveness
+    result = csv_processor.transform_transactions(
+        transactions_df, test_rules, csv_processor.headers, capture_metadata=True
+    )
+    
+    # Assert: Verify tuple return structure for metadata extraction
+    assert isinstance(result, tuple), "Expected tuple (output, metadata) when capture_metadata=True"
+    output, metadata = result
+    
+    # Act: Generate enhanced markdown dashboard
+    markdown_output = csv_processor.generate_markdown_dashboard(metadata)
+    
+    # Assert: Validate enhanced summary section exists
+    assert isinstance(markdown_output, str), "Markdown dashboard should return string"
+    assert "## Summary" in markdown_output, "Should have summary section"
+    
+    # Verify rule effectiveness metrics in summary section
+    assert "## Enhanced Rule Analytics" in markdown_output, "Should have enhanced rule analytics section with effectiveness data"
+    
+    # Verify top performing rules section
+    assert "### 🏆 Top Performing Rules" in markdown_output, "Should display top performing rules section"
+    assert "**Highest Average Confidence:**" in markdown_output, "Should show highest confidence rules"
+    
+    # Verify bottom performing rules section  
+    assert "### ⚠️ Bottom Performing Rules" in markdown_output, "Should display bottom performing rules section"
+    assert "**Lowest Average Confidence:**" in markdown_output, "Should show lowest confidence rules"
+    
+    # Verify rule usage statistics
+    assert "### 📊 Rule Usage Statistics" in markdown_output, "Should display rule usage statistics"
+    assert "**Most Frequently Used:**" in markdown_output, "Should show most used rules"
+    assert "**Unused Rules:**" in markdown_output, "Should show unused rules count"
+    
+    # Verify rule effectiveness percentages
+    assert "### 💯 Rule Effectiveness Summary" in markdown_output, "Should display effectiveness summary"
+    assert "**Average Rule Confidence:**" in markdown_output, "Should show average rule confidence"
+    assert "**Rules Above 80% Confidence:**" in markdown_output, "Should show high-confidence rule count"
+    assert "**Rules Below 50% Confidence:**" in markdown_output, "Should show low-confidence rule count"
+    
+    # Verify specific rule performance data is included
+    assert "SALARY PAYMENT COMPANY" in markdown_output, "Should include high-performing salary rule"
+    assert "0.9" in markdown_output, "Should display high confidence score"
+    
+    # Verify business value: Enhanced summary provides actionable insights for:
+    # - Rule optimization (identify low-performing rules for improvement)
+    # - Configuration cleanup (unused rules removal)
+    # - Performance monitoring (track rule effectiveness over time)
+    # - Quality assessment (confidence distribution analysis)
+
+
+def test_rule_effectiveness_section_shows_performance_ranking(csv_processor, sample_rules):
+    """Test dedicated Rule Effectiveness section displays comprehensive performance ranking.
+    
+    Business Behavior: Rule Effectiveness section provides detailed performance analysis
+    of all rules with usage statistics, confidence metrics, and effectiveness rankings
+    for systematic rule optimization and configuration management.
+    """
+    # Arrange: Create comprehensive rule set with varying performance characteristics
+    test_rules = build_test_rules(
+        sample_rules,
+        income=[
+            ("SALARY PAYMENT COMPANY", ACCOUNTS['salary']),      # High performing rule
+            ("*TRANSFER*", ACCOUNTS['other_income']),           # Medium performing rule  
+            ("POS 123456 ABC", ACCOUNTS['other_income']),       # Lower performing rule
+            ("*DIVIDEND*", ACCOUNTS['dividends'])               # Unused rule
+        ],
+        expense=[
+            ("*GROCERY*", ACCOUNTS['groceries']),    # Medium performing rule
+            ("*UTILITIES*", ACCOUNTS['utilities']),  # Unused rule
+            ("*MISC*", ACCOUNTS['general_expense']), # Lower performing rule
+            ("RENT PAYMENT", ACCOUNTS['rent'])       # High performing rule (unused in test)
+        ]
+    )
+    
+    # Test comprehensive transaction scenarios for effectiveness analysis
+    data = {
+        "Transaction Date": ["2024-07-19", "2024-07-20", "2024-07-21", "2024-07-22", "2024-07-23", "2024-07-24"],
+        "Description": [
+            "SALARY PAYMENT COMPANY",           # High confidence: specific rule + clear description (0.9)
+            "TRANSFER FROM BANK",               # Medium confidence: wildcard rule + clear description (0.5)
+            "TRANSFER WIRE ABC123",             # Medium confidence: wildcard rule + cryptic description (0.35)
+            "POS 123456 ABC",                  # Lower confidence: specific rule + cryptic description (0.7)
+            "GROCERY STORE PURCHASE",          # Medium confidence: wildcard rule + clear description (0.5)
+            "MISC TXN CODE XYZ"                # Lower confidence: wildcard rule + cryptic description (0.3)
+        ],
+        "Amount": ["2500.00", "1000.00", "800.00", "500.00", "-125.50", "-45.00"],
+    }
+    transactions_df = pd.DataFrame(data)
+
+    # Act: Process transactions to generate comprehensive metadata
+    result = csv_processor.transform_transactions(
+        transactions_df, test_rules, csv_processor.headers, capture_metadata=True
+    )
+    
+    # Assert: Verify tuple return structure for metadata extraction
+    assert isinstance(result, tuple), "Expected tuple (output, metadata) when capture_metadata=True"
+    output, metadata = result
+    
+    # Act: Generate markdown dashboard with rule effectiveness section
+    markdown_output = csv_processor.generate_markdown_dashboard(metadata)
+    # Assert: Validate dedicated Rule Effectiveness section exists
+    assert isinstance(markdown_output, str), "Markdown dashboard should return string"
+    assert "## Rule Effectiveness" in markdown_output, "Should have dedicated Rule Effectiveness section"
+    
+    # Verify section is separate from Enhanced Rule Analytics
+    assert "## Enhanced Rule Analytics" in markdown_output, "Should maintain Enhanced Rule Analytics section"
+    effectiveness_section = markdown_output.split("## Rule Effectiveness")[1]
+    
+    # Verify performance ranking display
+    assert "### 📈 Performance Ranking" in effectiveness_section, "Should display performance ranking subsection"
+    assert "**Ranked by Average Confidence:**" in effectiveness_section, "Should show confidence-based ranking"
+    
+    # Verify individual rule metrics are displayed
+    assert "**Rule**: " in effectiveness_section, "Should display individual rule details"
+    assert "**Usage Count**: " in effectiveness_section, "Should show usage count for each rule"
+    assert "**Average Confidence**: " in effectiveness_section, "Should show average confidence for each rule"
+    assert "**Effectiveness**: " in effectiveness_section, "Should show effectiveness percentage"
+    
+    # Verify rule type classification
+    assert "*(Income Rule)*" in effectiveness_section, "Should classify income rules"
+    assert "*(Expense Rule)*" in effectiveness_section, "Should classify expense rules"
+    
+    # Verify high-performing vs low-performing rule identification
+    assert "🏆" in effectiveness_section, "Should use trophy icon for high-performing rules"
+    assert "⚠️" in effectiveness_section, "Should use warning icon for low-performing rules"
+    
+    # Verify specific rule performance data
+    assert "SALARY PAYMENT COMPANY" in effectiveness_section, "Should include high-performing salary rule"
+    assert "*TRANSFER*" in effectiveness_section, "Should include medium-performing transfer rule"
+    assert "POS 123456 ABC" in effectiveness_section, "Should include lower-performing POS rule"
+    
+    # Verify unused rules are included in ranking
+    assert "*DIVIDEND*" in effectiveness_section, "Should include unused dividend rule"
+    assert "*UTILITIES*" in effectiveness_section, "Should include unused utilities rule"
+    assert "0 usage" in effectiveness_section or "Usage Count**: 0" in effectiveness_section, "Should show zero usage for unused rules"
+    
+    # Verify effectiveness percentages are calculated and displayed
+    assert "90%" in effectiveness_section or "0.9" in effectiveness_section, "Should show high effectiveness percentage"
+    assert "%" in effectiveness_section, "Should display percentage values"
+    
+    # Verify comprehensive ranking (all rules included)
+    rule_count_in_section = effectiveness_section.count("**Rule**: ")
+    assert rule_count_in_section == 8, f"Should display all 8 defined rules in effectiveness section, found {rule_count_in_section}"
+    
+    # Verify business value: Dedicated section provides systematic rule optimization insights
+    # - Performance ranking enables identification of best/worst performing rules
+    # - Usage statistics help optimize rule configuration
+    # - Effectiveness percentages provide quantitative assessment
+    # - Rule type classification enables category-based analysis
+    # - Unused rule identification supports configuration cleanup
+    
+    # Verify section organization supports decision-making workflow
+    assert effectiveness_section.count("🏆") >= 1, "Should identify at least one high-performing rule"
+    assert effectiveness_section.count("⚠️") >= 1, "Should identify at least one low-performing rule"

@@ -493,6 +493,22 @@ class BaseProcessor(ABC):
     except (FileNotFoundError, yaml.YAMLError):
       return {}  # Graceful degradation
 
+  def _get_performance_icon(self, confidence):
+    """Get performance icon based on confidence level.
+    
+    Args:
+        confidence (float): Confidence score between 0.0 and 1.0.
+        
+    Returns:
+        str: Unicode emoji icon representing performance level.
+    """
+    if confidence >= 0.8:
+        return "🏆"  # High performance
+    elif confidence < 0.5:
+        return "⚠️"   # Low performance  
+    else:
+        return "📊"  # Medium performance
+
   def generate_markdown_dashboard(self, metadata):
     """Generate markdown dashboard with confidence-based transaction groupings.
     
@@ -522,7 +538,7 @@ class BaseProcessor(ABC):
     md_content = "# Transaction Review Dashboard\n\n"
     
     # Summary metrics section
-    md_content += "## Summary\n"
+    md_content += "## Summary\n\n"
     md_content += f"- **Total Transactions**: {total_transactions}\n"
     md_content += f"- **Average Confidence**: {avg_confidence:.1f}\n"
     md_content += f"- **High Confidence**: {len(high_confidence)} transactions\n"
@@ -531,38 +547,145 @@ class BaseProcessor(ABC):
     
     # High confidence transactions
     if high_confidence:
-        md_content += "## 🟢 High Confidence Transactions\n"
+        md_content += "## 🟢 High Confidence Transactions\n\n"
+        md_content += "| Description | Amount | Date | Confidence |\n"
+        md_content += "|-------------|--------|------|------------|\n"
         for tx in high_confidence:
             amount_str = f"${abs(tx['amount']):.2f}"
-            md_content += f"- **{tx['description']}** | {amount_str} | {tx['date']} | Confidence: {tx['confidence_score']}\n"
+            md_content += f"| **{tx['description']}** | {amount_str} | {tx['date']} | Confidence: {tx['confidence_score']} |\n"
         md_content += "\n"
     
     # Medium confidence transactions  
     if medium_confidence:
-        md_content += "## 🟡 Medium Confidence Transactions\n"
+        md_content += "## 🟡 Medium Confidence Transactions\n\n"
+        md_content += "| Description | Amount | Date | Confidence |\n"
+        md_content += "|-------------|--------|------|------------|\n"
         for tx in medium_confidence:
             amount_str = f"${abs(tx['amount']):.2f}"
-            md_content += f"- **{tx['description']}** | {amount_str} | {tx['date']} | Confidence: {tx['confidence_score']}\n"
+            md_content += f"| **{tx['description']}** | {amount_str} | {tx['date']} | Confidence: {tx['confidence_score']} |\n"
         md_content += "\n"
     
     # Low confidence transactions
     if low_confidence:
-        md_content += "## 🔴 Low Confidence Transactions\n"
+        md_content += "## 🔴 Low Confidence Transactions\n\n"
+        md_content += "| Description | Amount | Date | Confidence |\n"
+        md_content += "|-------------|--------|------|------------|\n"
         for tx in low_confidence:
             amount_str = f"${abs(tx['amount']):.2f}"
-            md_content += f"- **{tx['description']}** | {amount_str} | {tx['date']} | Confidence: {tx['confidence_score']}\n"
+            md_content += f"| **{tx['description']}** | {amount_str} | {tx['date']} | Confidence: {tx['confidence_score']} |\n"
         md_content += "\n"
     
-    # Rule analytics section
+    # Enhanced Rule Analytics section
     if rule_analytics:
         coverage = rule_analytics.get("coverage_analysis", {})
         unused_rules = rule_analytics.get("unused_rules", [])
+        rule_effectiveness = rule_analytics.get("rule_effectiveness", {})
         
-        md_content += "## Rule Analytics\n"
-        md_content += f"- **Rule Usage**: {coverage.get('usage_percentage', 0):.0f}% ({coverage.get('rules_used', 0)}/{coverage.get('total_rules_defined', 0)})\n"
-        md_content += f"- **Transactions Matched**: {coverage.get('transactions_with_rules', 0)}/{coverage.get('total_transactions', 0)}\n"
+        md_content += "## Enhanced Rule Analytics\n\n"
         
-        if unused_rules:
-            md_content += f"- **Unused Rules**: {len(unused_rules)} rules can be removed\n"
+        # Helper function to get rule confidence safely
+        def get_rule_confidence(rule_data):
+            return rule_data.get('avg_confidence', 0)
+        
+        # Helper function to get rule usage count safely
+        def get_rule_usage(rule_data):
+            return rule_data.get('usage_count', 0)
+        
+        # Top performing rules subsection
+        md_content += "### 🏆 Top Performing Rules\n\n"
+        if rule_effectiveness:
+            top_rule_name, top_rule_data = max(rule_effectiveness.items(), 
+                                             key=lambda item: get_rule_confidence(item[1]))
+            confidence = get_rule_confidence(top_rule_data)
+            md_content += f"- **Highest Average Confidence:** {top_rule_name} ({confidence:.1f})\n"
+        md_content += "\n"
+        
+        # Bottom performing rules subsection
+        md_content += "### ⚠️ Bottom Performing Rules\n\n"
+        if rule_effectiveness:
+            bottom_rule_name, bottom_rule_data = min(rule_effectiveness.items(), 
+                                                   key=lambda item: get_rule_confidence(item[1]))
+            confidence = get_rule_confidence(bottom_rule_data)
+            md_content += f"- **Lowest Average Confidence:** {bottom_rule_name} ({confidence:.1f})\n"
+        md_content += "\n"
+        
+        # Rule usage statistics subsection  
+        md_content += "### 📊 Rule Usage Statistics\n\n"
+        if rule_effectiveness:
+            most_used_name, most_used_data = max(rule_effectiveness.items(), 
+                                               key=lambda item: get_rule_usage(item[1]))
+            usage_count = get_rule_usage(most_used_data)
+            md_content += f"- **Most Frequently Used:** {most_used_name} ({usage_count} times)\n"
+        md_content += f"- **Unused Rules:** {len(unused_rules)} rules can be removed\n\n"
+        
+        # Rule effectiveness summary subsection
+        md_content += "### 💯 Rule Effectiveness Summary\n\n"
+        if rule_effectiveness:
+            # Calculate metrics efficiently with single pass
+            total_confidence = 0
+            high_confidence_count = 0
+            low_confidence_count = 0
+            
+            for rule_data in rule_effectiveness.values():
+                confidence = get_rule_confidence(rule_data)
+                total_confidence += confidence
+                if confidence >= 0.8:
+                    high_confidence_count += 1
+                elif confidence < 0.5:
+                    low_confidence_count += 1
+            
+            avg_confidence = total_confidence / len(rule_effectiveness)
+            md_content += f"- **Average Rule Confidence:** {avg_confidence:.1f}\n"
+            md_content += f"- **Rules Above 80% Confidence:** {high_confidence_count} rules\n"
+            md_content += f"- **Rules Below 50% Confidence:** {low_confidence_count} rules\n"
+        
+        # Rule Effectiveness section (dedicated performance ranking)
+        md_content += "\n## Rule Effectiveness\n\n"
+        
+        # Add comprehensive coverage summary
+        used_rules_count = len(rule_effectiveness) if rule_effectiveness else 0
+        unused_rules_count = len(unused_rules)
+        total_rules_count = used_rules_count + unused_rules_count
+        
+        md_content += f"**Comprehensive Coverage:** {total_rules_count} total rules\n"
+        md_content += f"- **Used Rules:** {used_rules_count} rules\n"
+        md_content += f"- **Unused Rules:** {unused_rules_count} rules\n\n"
+        
+        # Performance ranking subsection
+        md_content += "### 📈 Performance Ranking\n\n"
+        md_content += "**Ranked by Average Confidence:**\n\n"
+        
+        # Get all rules from analytics and sort by performance
+        all_rules = {}
+        
+        # Include used rules from rule_effectiveness
+        if rule_effectiveness:
+            all_rules.update(rule_effectiveness)
+        
+        # Include unused rules with zero confidence
+        for unused_rule in unused_rules:
+            if unused_rule not in all_rules:
+                all_rules[unused_rule] = {"avg_confidence": 0.0, "usage_count": 0}
+        
+        # Sort rules by average confidence (descending)
+        sorted_rules = sorted(all_rules.items(), key=lambda x: x[1].get("avg_confidence", 0), reverse=True)
+        
+        # Display each rule with detailed metrics
+        for rule_name, rule_data in sorted_rules:
+            confidence = rule_data.get("avg_confidence", 0)
+            usage_count = rule_data.get("usage_count", 0)
+            effectiveness_pct = int(confidence * 100)
+            
+            # Determine performance icon
+            icon = self._get_performance_icon(confidence)
+            
+            # Determine rule type
+            rule_type = "*(Income Rule)*" if rule_name.startswith("income.") else "*(Expense Rule)*"
+            
+            # Format rule display
+            md_content += f"- {icon} **Rule**: {rule_name} {rule_type}\n"
+            md_content += f"  - **Usage Count**: {usage_count}\n"
+            md_content += f"  - **Average Confidence**: {confidence:.1f}\n"
+            md_content += f"  - **Effectiveness**: {effectiveness_pct}%\n\n"
     
     return md_content
