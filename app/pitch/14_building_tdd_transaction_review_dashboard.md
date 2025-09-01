@@ -3,6 +3,13 @@
 ## Overview
 Implement `--review` CLI flag that generates markdown dashboards for transaction review with confidence scoring and rule analytics.
 
+### Gaps Analysis
+1. Hard to read Performance Ranking by Average Confidence
+  - Replace with a table and columns (Rank, Rule, Usage Count, Average Confidence, Effectiveness)
+2. New section to show transactions that were captured by
+  - Catch all rule
+  - No rules
+
 ### Success Criteria
 - `--review` flag generates markdown dashboard
 - Zero impact on existing functionality
