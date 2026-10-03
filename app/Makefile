@@ -1,15 +1,49 @@
-include .env
+-include .env
 
-.PHONY: default aider aider_dryrun install_new install_test llm pre-commit run shell shell_clean test test_verbose test_coverage run_dbs run_hsbc run_uob_bg run_uob_dl run_uob_family run_dbs_simple run_hsbc_simple run_uob_dl_simple run_uob_family_simple review_dbs review_hsbc review_uob_bg review_uob_dl review_uob_family review_dbs_simple review_hsbc_simple review_uob_dl_simple review_uob_family_simple
+.PHONY: default help aider aider_dryrun check-pins install_new install_test llm pre-commit run shell shell_clean test test_verbose test_coverage run_dbs run_hsbc run_uob_bg run_uob_dl run_uob_family run_dbs_simple run_hsbc_simple run_uob_dl_simple run_uob_family_simple review_dbs review_hsbc review_uob_bg review_uob_dl review_uob_family review_dbs_simple review_hsbc_simple review_uob_dl_simple review_uob_family_simple
 SHELL := /bin/bash
 
-default: test
+default: help
+
+help:
+	@echo ""
+	@echo "=== Targets ==="
+	@echo "  help                  Show this help"
+	@echo "  test                  Run test suite"
+	@echo "  test_verbose          Run test suite, verbose output"
+	@echo "  test_coverage         Run test suite with coverage report"
+	@echo "  run                   Run ledger.py directly (no args)"
+	@echo "  shell                 Open a pipenv shell"
+	@echo "  shell_clean           Remove the pipenv virtualenv"
+	@echo "  install_new           Install pinned dependencies"
+	@echo "  check-pins            Fail if any Pipfile dependency isn't exact-pinned"
+	@echo "  pre-commit            Run pre-commit hooks on all files"
+	@echo "  aider                 Launch aider on app/tests source"
+	@echo "  aider_dryrun          Preview aider's changes without applying them"
+	@echo "  llm                   Pipe source through llm"
+	@echo "                        INPUT: prompt text, required"
+	@echo ""
+	@echo "=== Bank-specific processing ==="
+	@echo "  run_dbs               Process input/dbs.csv with rules_dbs.yaml"
+	@echo "  run_hsbc              Process input/hsbc.csv with rules_hsbc.yaml"
+	@echo "  run_uob_bg            Process input/uob_bg.xls with rules_uob_bg.yaml"
+	@echo "  run_uob_dl            Process input/uob_dl.xls with rules_uob_dl.yaml"
+	@echo "  run_uob_family        Process input/uob_family.xls with rules_uob_family.yaml"
+	@echo "  run_<bank>_simple     Same as run_<bank>, using the _simplified rules variant"
+	@echo ""
+	@echo "=== Review dashboard ==="
+	@echo "  review_<bank>         Same as run_<bank>, adds --review"
+	@echo "  review_<bank>_simple  Same as run_<bank>_simple, adds --review"
+	@echo ""
 
 aider:
 	@cd .. && aider app/*.py app/common/*.py app/tests/*.py
 
 aider_dryrun:
 	@cd .. && aider --dry-run app/*.py app/common/*.py app/tests/*.py
+
+check-pins:
+	@awk '/^\[(dev-)?packages\]/{f=1;next} /^\[/{f=0} f && NF && $$0 !~ /"==/{print "unpinned: " $$0; bad=1} END{exit bad?1:0}' Pipfile
 
 install_new:
 	pipenv install pandas==2.2.2 pyyaml==6.0.1 openpyxl==3.1.3 typer==0.12.3 jsonschema==4.23.0
